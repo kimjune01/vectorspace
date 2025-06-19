@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -14,12 +13,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MessageSquare, Send, User, Bot, Menu, LogOut, Loader2, AlertTriangle, Settings, Search, UserIcon } from 'lucide-react';
+import { MessageSquare, Send, User, Menu, LogOut, Loader2, AlertTriangle, Settings, Search, UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import type { Conversation } from '@/types';
-import SimilarConversationsSidebar from '@/components/SimilarConversationsSidebar';
+import EnhancedSidebar from '@/components/layout/EnhancedSidebar';
+import PresenceIndicator from '@/components/PresenceIndicator';
+import MessageWithPresence from '@/components/MessageWithPresence';
+import { useMessageViewport } from '@/hooks/useMessageViewport';
+import { usePresence } from '@/hooks/usePresence';
 
 interface Message {
   id: string;
@@ -39,6 +42,36 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const presenceUpdateHandlerRef = useRef<((message: any) => void) | null>(null);
+  
+  // Presence and viewport tracking
+  const { getMessageViewers, handlePresenceUpdate } = usePresence(currentConversation?.id?.toString() || null);
+  
+  const {
+    containerRef,
+    registerMessage,
+    selectMessage,
+    viewportInfo
+  } = useMessageViewport({
+    messages,
+    conversationId: currentConversation?.id?.toString() || null,
+    onViewportChange: (messageIndex, messageId) => {
+      // Send scroll position update via WebSocket
+      if (ws && messageIndex !== null && messageId !== null) {
+        ws.send(JSON.stringify({
+          type: 'scroll_update',
+          current_message_index: messageIndex,
+          current_message_id: messageId,
+          timestamp: Date.now()
+        }));
+      }
+    }
+  });
+
+  // Initialize presence update handler
+  useEffect(() => {
+    presenceUpdateHandlerRef.current = handlePresenceUpdate;
+  }, [handlePresenceUpdate]);
 
   // Redirect to login if not authenticated (but wait for auth to load)
   useEffect(() => {
@@ -110,25 +143,58 @@ export default function HomePage() {
         
         // Send the user message
         websocket.send(JSON.stringify({
-          type: 'message',
-          content: messageContent
+          type: 'send_message',
+          content: messageContent,
+          role: 'user'
         }));
       };
       
       websocket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('WebSocket message received:', data);
           
-          if (data.type === 'message') {
-            const aiMessage: Message = {
-              id: data.id || Date.now().toString(),
-              content: data.content,
-              role: 'assistant',
-              timestamp: new Date().toISOString()
+          if (data.type === 'new_message') {
+            const message = data.message;
+            const newMessage: Message = {
+              id: message.id.toString(),
+              content: message.content,
+              role: message.role,
+              timestamp: message.timestamp
             };
-            setMessages(prev => [...prev, aiMessage]);
+            setMessages(prev => [...prev, newMessage]);
+          } else if (data.type === 'ai_response_chunk') {
+            // Handle streaming AI response
+            setMessages(prev => {
+              const lastMessage = prev[prev.length - 1];
+              if (lastMessage && lastMessage.role === 'assistant' && lastMessage.id === data.message_id) {
+                // Append to existing AI message
+                return prev.map(msg => 
+                  msg.id === data.message_id 
+                    ? { ...msg, content: msg.content + data.content }
+                    : msg
+                );
+              } else {
+                // Create new AI message
+                return [...prev, {
+                  id: data.message_id,
+                  content: data.content,
+                  role: 'assistant',
+                  timestamp: new Date().toISOString()
+                }];
+              }
+            });
+          } else if (data.type === 'ai_response_complete') {
+            console.log('AI response completed');
+            setIsLoading(false);
           } else if (data.type === 'error') {
             setError(data.message || 'An error occurred');
+            setIsLoading(false);
+          } else if (data.type === 'presence_update' || data.type === 'scroll_update') {
+            // Handle presence and scroll updates
+            presenceUpdateHandlerRef.current?.(data);
+          } else if (data.type === 'connection_established') {
+            console.log('WebSocket connection established:', data);
           }
         } catch (err) {
           console.error('Failed to parse WebSocket message:', err);
@@ -230,10 +296,19 @@ export default function HomePage() {
   }
 
   const sidebarContent = (
-    <SimilarConversationsSidebar
+    <EnhancedSidebar
+      onSessionSelect={(sessionId) => {
+        // Handle session selection for My Chats tab
+        console.log('Session selected:', sessionId);
+      }}
+      onNewChat={handleNewChat}
+      currentSessionId={currentConversation?.id?.toString() || null}
+      onSearchResultSelect={(messageId, sessionId) => {
+        // Handle search result selection
+        console.log('Search result selected:', messageId, sessionId);
+      }}
       currentConversation={currentConversation}
       onConversationSelect={handleConversationSelect}
-      onNewChat={handleNewChat}
     />
   );
 
@@ -275,6 +350,15 @@ export default function HomePage() {
             >
               {currentConversation ? currentConversation.title : 'VectorSpace'}
             </motion.h1>
+            
+            {/* Presence Indicator */}
+            <PresenceIndicator 
+              conversationId={currentConversation?.id?.toString() || null}
+              currentUserId={user?.id}
+              onPresenceUpdate={(handler) => {
+                presenceUpdateHandlerRef.current = handler;
+              }}
+            />
           </div>
           <div className="flex items-center space-x-3">
             <p className="text-xs sm:text-sm text-muted-foreground hidden md:block">
@@ -332,77 +416,24 @@ export default function HomePage() {
           </div>
         </motion.header>
 
-        {/* Messages Area */}
-        <ScrollArea className="flex-grow relative">
+        {/* Messages Area with Scroll-based Presence */}
+        <ScrollArea className="flex-grow relative" ref={containerRef}>
           <div className="absolute inset-0 pointer-events-none z-0">
             <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/5 to-background/10" />
           </div>
-          <div className="p-4 sm:p-6 space-y-6 relative z-10">
+          <div className="p-4 sm:p-6 space-y-4 relative z-10">
             <AnimatePresence initial={false}>
-              {messages.map((message) => (
-                <motion.div
+              {messages.map((message, index) => (
+                <MessageWithPresence
                   key={message.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} transition-all duration-500 ease-out`}
-                >
-                  <div className={`flex items-start space-x-2 max-w-[80%] sm:max-w-[70%] ${
-                    message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                  }`}>
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                    >
-                      {message.role === 'assistant' ? (
-                        <Avatar className="w-8 h-8 border-2 border-primary/20">
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            <Bot size={18}/>
-                          </AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        <Avatar className="w-8 h-8 border-2 border-muted-foreground/20">
-                          <AvatarFallback className="bg-muted-foreground/10 text-muted-foreground">
-                            <User size={18}/>
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </motion.div>
-
-                    <motion.div
-                      initial={{ scale: 0.95, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                      className="flex-1"
-                    >
-                      <Card className={`
-                        rounded-xl shadow-lg transition-shadow hover:shadow-xl
-                        ${message.role === 'user'
-                          ? 'bg-primary text-primary-foreground rounded-br-none'
-                          : 'bg-card/50 backdrop-blur-sm text-card-foreground rounded-bl-none'
-                        }
-                      `}>
-                        <CardContent className="p-3 text-sm leading-relaxed">
-                          <div className="prose prose-sm dark:prose-invert max-w-none break-words">
-                            {message.content}
-                          </div>
-                          <p className={`text-xs mt-2 ${
-                            message.role === 'user'
-                              ? 'text-primary-foreground/70 text-right'
-                              : 'text-muted-foreground/70 text-left'
-                          }`}>
-                            {new Date(message.timestamp).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  </div>
-                </motion.div>
+                  message={message}
+                  messageIndex={index}
+                  viewers={getMessageViewers(message.id)}
+                  currentUserId={user?.id}
+                  isCurrentlyViewed={viewportInfo.messageId === message.id}
+                  onRegister={registerMessage}
+                  onMessageClick={selectMessage}
+                />
               ))}
             </AnimatePresence>
             

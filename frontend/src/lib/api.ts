@@ -131,8 +131,8 @@ export class ApiClient {
     });
   }
 
-  async getSimilarConversations(conversationId: string, limit: number = 10) {
-    return this.request<any>(`/search/similar/${conversationId}?limit=${limit}`, {
+  async getSimilarConversations(conversationId: string, limit: number = 20) {
+    return this.request<any>(`/conversations/${conversationId}/similar?limit=${limit}`, {
       method: 'GET',
     });
   }
@@ -140,7 +140,10 @@ export class ApiClient {
   // WebSocket URL helper
   getWebSocketUrl(conversationId: string): string {
     const wsBase = this.baseUrl.replace('http://', 'ws://').replace('https://', 'wss://');
-    return `${wsBase}/ws/conversations/${conversationId}`;
+    if (!this.token) {
+      throw new Error('Authentication token required for WebSocket connection');
+    }
+    return `${wsBase}/ws/conversations/${conversationId}?token=${encodeURIComponent(this.token)}`;
   }
 }
 

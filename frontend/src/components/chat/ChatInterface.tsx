@@ -14,9 +14,10 @@ import type { Message } from '@/types';
 interface ChatInterfaceProps {
   conversationId: string;
   onNewMessage?: (message: Message) => void;
+  onTitleUpdate?: (newTitle: string) => void;
 }
 
-export function ChatInterface({ conversationId, onNewMessage }: ChatInterfaceProps) {
+export function ChatInterface({ conversationId, onNewMessage, onTitleUpdate }: ChatInterfaceProps) {
   const { isAuthenticated } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -61,6 +62,13 @@ export function ChatInterface({ conversationId, onNewMessage }: ChatInterfacePro
     
     if (wsMessage.type === 'ai_message') {
       setIsLoading(false);
+    }
+    
+    if (wsMessage.type === 'title_updated') {
+      console.log('Title updated:', wsMessage.new_title);
+      if (wsMessage.new_title) {
+        onTitleUpdate?.(wsMessage.new_title);
+      }
     }
   };
 

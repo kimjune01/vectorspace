@@ -296,7 +296,18 @@ async def handle_send_message(
         # Check if conversation should be summarized (1500+ tokens)
         if conversation.should_auto_archive() and not conversation.summary_raw:
             from app.services.summary_service import summary_service
+            old_title = conversation.title
             await summary_service.check_and_generate_summary(conversation_id, db)
+            
+            # Check if title was updated and broadcast the change
+            await db.refresh(conversation)
+            if conversation.title != old_title:
+                await websocket_manager.broadcast_to_conversation(conversation_id, {
+                    "type": "title_updated",
+                    "conversation_id": conversation_id,
+                    "new_title": conversation.title,
+                    "message": "Title updated based on conversation content"
+                })
         
         # Broadcast message to all participants
         await websocket_manager.broadcast_to_conversation(conversation_id, {

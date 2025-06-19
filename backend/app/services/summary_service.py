@@ -14,9 +14,15 @@ class SummaryService:
     async def check_and_generate_summary(
         self, 
         conversation_id: int, 
-        db: AsyncSession
+        db: AsyncSession,
+        update_title: bool = True
     ) -> Optional[str]:
         """Check if conversation needs summary and generate if required.
+        
+        Args:
+            conversation_id: ID of the conversation
+            db: Database session
+            update_title: Whether to update conversation title when summary is generated
         
         Returns the generated summary if one was created, None otherwise.
         """
@@ -48,6 +54,10 @@ class SummaryService:
             
             # Generate and store embedding in ChromaDB
             await self._store_embedding(conversation, summary, db)
+            
+            # Update conversation title based on new summary
+            if update_title:
+                await self._update_conversation_title(conversation_id, summary, db)
             
             return summary
         
@@ -144,9 +154,15 @@ class SummaryService:
     async def force_generate_summary(
         self, 
         conversation_id: int, 
-        db: AsyncSession
+        db: AsyncSession,
+        update_title: bool = True
     ) -> Optional[str]:
         """Force generate summary regardless of token count.
+        
+        Args:
+            conversation_id: ID of the conversation
+            db: Database session
+            update_title: Whether to update conversation title when summary is generated
         
         Useful for manual archiving or testing.
         """
@@ -166,6 +182,10 @@ class SummaryService:
                 
                 # Generate and store embedding
                 await self._store_embedding(conversation, summary, db)
+                
+                # Update conversation title based on new summary
+                if update_title:
+                    await self._update_conversation_title(conversation_id, summary, db)
         
         return summary
     
@@ -207,6 +227,37 @@ class SummaryService:
             
         except Exception as e:
             print(f"Error storing embedding: {e}")
+    
+    async def _update_conversation_title(self, conversation_id: int, summary: str, db: AsyncSession):
+        """Update conversation title based on new summary."""
+        try:
+            from app.services.title_service import title_service
+            
+            # Try to generate title from summary first, fallback to messages
+            new_title = await title_service.generate_title_from_summary(summary)
+            
+            if not new_title:
+                # Fallback to generating from messages
+                new_title = await title_service.generate_title_from_messages(conversation_id, db)
+            
+            if new_title:
+                # Get conversation and update title
+                conversation_result = await db.execute(
+                    select(Conversation).where(Conversation.id == conversation_id)
+                )
+                conversation = conversation_result.scalar_one_or_none()
+                
+                if conversation and new_title != conversation.title:
+                    # Only update if title appears to be auto-generated (not custom)
+                    if not title_service._is_custom_title(conversation.title):
+                        conversation.title = new_title
+                        await db.commit()
+                        print(f"Updated title for conversation {conversation_id}: {new_title}")
+                    else:
+                        print(f"Skipped title update for conversation {conversation_id} (custom title detected)")
+        
+        except Exception as e:
+            print(f"Error updating conversation title: {e}")
 
 
 # Global instance

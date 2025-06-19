@@ -201,6 +201,13 @@ export default function ChatPage() {
             onNewMessage={() => {
               // Message count will be updated by WebSocket, no need to refetch
             }}
+            onTitleUpdate={(newTitle) => {
+              // Update conversation title when received via WebSocket
+              if (conversation) {
+                setConversation({ ...conversation, title: newTitle });
+                setEditTitle(newTitle);
+              }
+            }}
           />
         </Card>
       </div>

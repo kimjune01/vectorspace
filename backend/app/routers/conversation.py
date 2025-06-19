@@ -644,3 +644,129 @@ async def get_similar_conversations(
     return {
         "conversations": public_similar_conversations[:limit]
     }
+
+
+@router.post("/{conversation_id}/generate-title", response_model=dict)
+async def generate_conversation_title(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    force_update: bool = Query(False, description="Force update even if title is custom")
+):
+    """Generate a new title for the conversation based on its content."""
+    # Check if conversation exists and user has access
+    conversation_result = await db.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = conversation_result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+    
+    # Check if user owns the conversation or is a participant
+    if conversation.user_id != current_user.id:
+        if conversation.is_public:
+            # Public conversations can only be title-updated by owner
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only conversation owner can generate title"
+            )
+        else:
+            # Check if user is a participant in private conversation
+            participant_result = await db.execute(
+                select(ConversationParticipant)
+                .where(ConversationParticipant.conversation_id == conversation_id)
+                .where(ConversationParticipant.user_id == current_user.id)
+            )
+            
+            if not participant_result.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied"
+                )
+    
+    # Generate new title
+    from app.services.title_service import title_service
+    
+    try:
+        new_title = await title_service.update_conversation_title(
+            conversation_id, db, force_update=force_update
+        )
+        
+        if new_title:
+            return {
+                "success": True,
+                "title": new_title,
+                "message": "Title updated successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "title": conversation.title,
+                "message": "Title not updated (may be custom or generation failed)"
+            }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate title: {str(e)}"
+        )
+
+
+@router.post("/{conversation_id}/regenerate-summary-and-title", response_model=dict)
+async def regenerate_summary_and_title(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Regenerate both summary and title for the conversation."""
+    # Check if conversation exists and user has access
+    conversation_result = await db.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = conversation_result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+    
+    # Check if user owns the conversation
+    if conversation.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only conversation owner can regenerate summary and title"
+        )
+    
+    try:
+        from app.services.summary_service import summary_service
+        
+        # Clear existing summary to force regeneration
+        conversation.summary_raw = None
+        conversation.summary_public = None
+        await db.commit()
+        
+        # Force generate new summary and title
+        new_summary = await summary_service.force_generate_summary(
+            conversation_id, db, update_title=True
+        )
+        
+        # Get updated conversation
+        await db.refresh(conversation)
+        
+        return {
+            "success": True,
+            "summary": conversation.summary_public,
+            "title": conversation.title,
+            "message": "Summary and title regenerated successfully"
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to regenerate summary and title: {str(e)}"
+        )

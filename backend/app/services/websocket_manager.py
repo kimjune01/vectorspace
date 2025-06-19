@@ -2,7 +2,7 @@ import json
 import uuid
 from typing import Dict, List, Set, Optional
 from fastapi import WebSocket, WebSocketDisconnect
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 import logging
 
@@ -61,17 +61,8 @@ class ConversationWebSocketManager:
         
         logger.info(f"User {username} ({user_id}) connected to conversation {conversation_id}")
         
-        # Notify other participants about the new connection
-        await self.broadcast_to_conversation(
-            conversation_id,
-            {
-                "type": "user_joined",
-                "user_id": user_id,
-                "username": username,
-                "timestamp": datetime.utcnow().isoformat()
-            },
-            exclude_connection_id=connection.connection_id
-        )
+        # Note: Presence updates are handled by the presence_manager, not here
+        # This avoids duplicate notifications
         
         return connection.connection_id
     
@@ -107,16 +98,8 @@ class ConversationWebSocketManager:
         
         logger.info(f"User {username} ({user_id}) disconnected from conversation {conversation_id}")
         
-        # Notify other participants about the disconnection
-        await self.broadcast_to_conversation(
-            conversation_id,
-            {
-                "type": "user_left",
-                "user_id": user_id,
-                "username": username,
-                "timestamp": datetime.utcnow().isoformat()
-            }
-        )
+        # Note: Presence updates are handled by the presence_manager, not here
+        # This avoids duplicate notifications
     
     async def send_to_connection(self, connection_id: str, message: dict):
         """Send a message to a specific connection."""
@@ -207,7 +190,7 @@ class ConversationWebSocketManager:
     
     async def cleanup_stale_connections(self, max_idle_minutes: int = 30):
         """Remove connections that have been idle for too long."""
-        cutoff_time = datetime.utcnow() - asyncio.timedelta(minutes=max_idle_minutes)
+        cutoff_time = datetime.utcnow() - timedelta(minutes=max_idle_minutes)
         stale_connections = []
         
         for connection_id, connection in self.connection_lookup.items():
@@ -219,6 +202,13 @@ class ConversationWebSocketManager:
         
         logger.info(f"Cleaned up {len(stale_connections)} stale connections")
         return len(stale_connections)
+    
+    async def handle_pong(self, connection_id: str):
+        """Handle pong response from WebSocket heartbeat."""
+        # Import here to avoid circular imports
+        from app.services.heartbeat_manager import get_heartbeat_manager
+        heartbeat_manager = get_heartbeat_manager(self)
+        heartbeat_manager.handle_pong(connection_id)
     
     def get_stats(self) -> Dict:
         """Get WebSocket manager statistics."""

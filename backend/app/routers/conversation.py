@@ -10,6 +10,8 @@ from app.schemas.conversation import (
     MessageResponse, ParticipantResponse, ConversationListResponse,
     MessageCreate, ConversationUpdate, JoinConversationRequest, SuccessResponse
 )
+from app.services.vector_service import vector_service
+from app.services.summary_service import SummaryService
 from app.auth import get_current_user
 
 router = APIRouter()
@@ -186,6 +188,117 @@ async def get_conversation_messages(
         message_responses.append(message_data)
     
     return message_responses
+
+
+@router.post("/{conversation_id}/messages", response_model=MessageResponse)
+async def create_message(
+    conversation_id: int,
+    message_data: MessageCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a new message in a conversation with automatic summary regeneration."""
+    # Verify conversation exists and user has access
+    conversation_result = await db.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = conversation_result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+    
+    # Check if user is the owner or a participant
+    if conversation.user_id != current_user.id:
+        participant_result = await db.execute(
+            select(ConversationParticipant)
+            .where(and_(
+                ConversationParticipant.conversation_id == conversation_id,
+                ConversationParticipant.user_id == current_user.id
+            ))
+        )
+        if not participant_result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this conversation"
+            )
+    
+    # Create the message
+    message = Message(
+        conversation_id=conversation_id,
+        from_user_id=current_user.id,
+        role=message_data.role,
+        content=message_data.content
+    )
+    
+    db.add(message)
+    await db.commit()
+    await db.refresh(message)
+    
+    # Update conversation metadata
+    conversation.update_last_message_time()
+    
+    # Recalculate token count for the conversation
+    messages_result = await db.execute(
+        select(Message).where(Message.conversation_id == conversation_id)
+    )
+    all_messages = messages_result.scalars().all()
+    total_tokens = sum(msg.token_count for msg in all_messages)
+    
+    previous_token_count = conversation.token_count
+    conversation.token_count = total_tokens
+    
+    await db.commit()
+    
+    # Check if we've crossed a 1000-token milestone for summary regeneration
+    previous_milestone = previous_token_count // 1000
+    current_milestone = total_tokens // 1000
+    
+    if current_milestone > previous_milestone and total_tokens >= 1000:
+        # Regenerate summary at milestone
+        try:
+            summary_service = SummaryService()
+            
+            # Generate summary using the existing async method
+            summary_raw = await summary_service.generate_summary(conversation_id, db)
+            
+            if summary_raw:
+                # Filter summary for public use
+                summary_public = summary_service.pii_filter.filter_text(summary_raw)
+                
+                # Update conversation with new summary
+                conversation.summary_raw = summary_raw
+                conversation.summary_public = summary_public
+                await db.commit()
+                
+                # Store embedding in vector database
+                await vector_service.store_conversation_embedding(
+                    conversation_id=str(conversation.id),
+                    summary=summary_public,
+                    metadata={
+                        'title': conversation.title,
+                        'user_id': str(conversation.user_id),
+                        'username': current_user.username,
+                        'is_public': str(conversation.is_public),
+                        'created_at': conversation.created_at.isoformat(),
+                        'token_count': str(total_tokens)
+                    }
+                )
+            
+        except Exception as e:
+            # Log error but don't fail the message creation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to generate summary for conversation {conversation_id}: {e}")
+    
+    # Prepare response
+    message_response = MessageResponse.model_validate(message)
+    message_response.from_user_username = current_user.username
+    message_response.from_user_display_name = current_user.display_name
+    
+    return message_response
 
 
 @router.post("/{conversation_id}/join", response_model=SuccessResponse)
@@ -487,3 +600,47 @@ async def list_conversations(
         per_page=per_page,
         has_next=has_next
     )
+
+
+@router.get("/{conversation_id}/similar")
+async def get_similar_conversations(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(20, ge=1, le=50)
+):
+    """Get conversations similar to the specified conversation."""
+    # Verify conversation exists
+    conversation_result = await db.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = conversation_result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+    
+    # Check if conversation has a summary for similarity search
+    if not conversation.summary_public:
+        return {
+            "conversations": [],
+            "message": "No summary available for similarity search"
+        }
+    
+    # Find similar conversations using vector service
+    similar_conversations = vector_service.find_similar_conversations(
+        conversation_id=str(conversation_id),
+        limit=limit
+    )
+    
+    # Filter out private conversations (only show public ones)
+    public_similar_conversations = [
+        conv for conv in similar_conversations 
+        if conv.get('is_public', False)
+    ]
+    
+    return {
+        "conversations": public_similar_conversations[:limit]
+    }

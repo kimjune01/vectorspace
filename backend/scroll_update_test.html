@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VectorSpace scroll_update Verification Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .panel { background: white; margin: 10px 0; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; font-weight: bold; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        button { margin: 5px; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .connect { background-color: #007bff; color: white; }
+        .disconnect { background-color: #dc3545; color: white; }
+        .test { background-color: #28a745; color: white; }
+        .clear { background-color: #6c757d; color: white; }
+        #messages { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: #f8f9fa; font-family: monospace; font-size: 12px; }
+        .user-controls { display: flex; gap: 20px; flex-wrap: wrap; }
+        .user-panel { flex: 1; min-width: 300px; }
+        h3 { color: #333; margin-top: 0; }
+        .test-results { margin-top: 20px; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 VectorSpace scroll_update Verification Test</h1>
+        <div id="overallStatus" class="status info">Ready to test scroll_update functionality</div>
+        
+        <div class="panel">
+            <h3>Test Instructions</h3>
+            <ol>
+                <li>Connect User 1 to test basic connection</li>
+                <li>Send scroll_update message to verify it's processed without "Unknown message type" error</li>
+                <li>Connect User 2 to test multi-user presence functionality</li>
+                <li>Send scroll_update from one user to verify broadcast to other user</li>
+                <li>Check that scroll updates correctly show user presence tracking</li>
+            </ol>
+        </div>
+
+        <div class="user-controls">
+            <!-- User 1 Panel -->
+            <div class="user-panel panel">
+                <h3>👤 User 1 (testuser)</h3>
+                <div id="status1" class="status info">Ready to connect</div>
+                <div>
+                    <button id="connect1Btn" class="connect">Connect User 1</button>
+                    <button id="disconnect1Btn" class="disconnect" disabled>Disconnect</button>
+                    <button id="scroll1Btn" class="test" disabled>Send scroll_update</button>
+                </div>
+                <div>Message Index: <input type="number" id="msgIndex1" value="1" min="0" max="100" style="width: 60px;"></div>
+            </div>
+
+            <!-- User 2 Panel -->
+            <div class="user-panel panel">
+                <h3>👤 User 2 (testuser2)</h3>
+                <div id="status2" class="status info">Ready to connect</div>
+                <div>
+                    <button id="connect2Btn" class="connect">Connect User 2</button>
+                    <button id="disconnect2Btn" class="disconnect" disabled>Disconnect</button>
+                    <button id="scroll2Btn" class="test" disabled>Send scroll_update</button>
+                </div>
+                <div>Message Index: <input type="number" id="msgIndex2" value="5" min="0" max="100" style="width: 60px;"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>📊 Test Controls</h3>
+            <button id="runFullTestBtn" class="test">🧪 Run Full Test Suite</button>
+            <button id="clearMessagesBtn" class="clear">Clear Messages</button>
+        </div>
+
+        <div class="panel">
+            <h3>📨 WebSocket Messages</h3>
+            <div id="messages"></div>
+        </div>
+
+        <div class="test-results panel">
+            <h3>✅ Test Results</h3>
+            <div id="testResults"></div>
+        </div>
+    </div>
+
+    <script>
+        // Test state
+        let ws1 = null, ws2 = null;
+        let user1Connected = false, user2Connected = false;
+        let testResults = [];
+        
+        // DOM elements
+        const messagesDiv = document.getElementById('messages');
+        const overallStatus = document.getElementById('overallStatus');
+        const testResultsDiv = document.getElementById('testResults');
+        
+        // JWT tokens for test users (valid for 1 hour)
+        const tokens = {
+            testuser: generateToken('testuser'),
+            testuser2: generateToken('testuser2')
+        };
+
+        function generateToken(username) {
+            // Simple JWT token generation for testing (in production, get from login API)
+            const header = btoa(JSON.stringify({alg: "HS256", typ: "JWT"}));
+            const payload = btoa(JSON.stringify({
+                sub: username,
+                iat: Math.floor(Date.now() / 1000),
+                exp: Math.floor(Date.now() / 1000) + 3600,
+                jti: generateUUID()
+            }));
+            return `${header}.${payload}.fake_signature_for_testing`;
+        }
+
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        function updateOverallStatus(message, type = 'info') {
+            overallStatus.textContent = message;
+            overallStatus.className = 'status ' + type;
+        }
+
+        function updateUserStatus(userNum, message, type = 'info') {
+            const statusDiv = document.getElementById(`status${userNum}`);
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+
+        function addMessage(message, type = 'info') {
+            const div = document.createElement('div');
+            const timestamp = new Date().toLocaleTimeString();
+            const typeIcon = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : '📨';
+            div.innerHTML = `<strong>${timestamp} ${typeIcon}</strong> ${message}`;
+            div.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : type === 'warning' ? '#ffc107' : '#333';
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addTestResult(testName, success, details) {
+            testResults.push({testName, success, details, timestamp: new Date()});
+            updateTestResults();
+        }
+
+        function updateTestResults() {
+            testResultsDiv.innerHTML = testResults.map(result => {
+                const icon = result.success ? '✅' : '❌';
+                const className = result.success ? 'success' : 'error';
+                return `<div class="test-result ${className}">
+                    <strong>${icon} ${result.testName}</strong><br>
+                    ${result.details}<br>
+                    <small>${result.timestamp.toLocaleTimeString()}</small>
+                </div>`;
+            }).join('');
+        }
+
+        function connectUser(userNum, username) {
+            try {
+                const token = tokens[username];
+                const wsUrl = `ws://localhost:8000/api/ws/conversations/1?token=${token}`;
+                addMessage(`Connecting ${username} to ${wsUrl}`, 'info');
+                
+                const ws = new WebSocket(wsUrl);
+                
+                ws.onopen = function(event) {
+                    updateUserStatus(userNum, `${username} connected`, 'success');
+                    addMessage(`${username} WebSocket connection opened`, 'success');
+                    
+                    if (userNum === 1) {
+                        user1Connected = true;
+                        document.getElementById('connect1Btn').disabled = true;
+                        document.getElementById('disconnect1Btn').disabled = false;
+                        document.getElementById('scroll1Btn').disabled = false;
+                        addTestResult('User 1 Connection', true, 'Successfully connected testuser to WebSocket');
+                    } else {
+                        user2Connected = true;
+                        document.getElementById('connect2Btn').disabled = true;
+                        document.getElementById('disconnect2Btn').disabled = false;
+                        document.getElementById('scroll2Btn').disabled = false;
+                        addTestResult('User 2 Connection', true, 'Successfully connected testuser2 to WebSocket');
+                    }
+                };
+                
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    addMessage(`${username} received: ${JSON.stringify(data)}`, 'info');
+                    
+                    // Test scroll_update responses
+                    if (data.type === 'scroll_update') {
+                        addTestResult('Scroll Update Broadcast', true, 
+                            `Received scroll_update broadcast from ${data.username} at message ${data.current_message_index}`);
+                    } else if (data.type === 'error' && data.message.includes('Unknown message type')) {
+                        addTestResult('Scroll Update Error', false, 
+                            `ERROR: ${data.message} - The scroll_update fix failed!`);
+                    } else if (data.type === 'presence_update') {
+                        addTestResult('Presence System', true, 
+                            `Presence update: ${data.action} for ${data.username}`);
+                    }
+                };
+                
+                ws.onclose = function(event) {
+                    updateUserStatus(userNum, `${username} disconnected`, 'error');
+                    addMessage(`${username} WebSocket closed: ${event.code} ${event.reason}`, 'warning');
+                    
+                    if (userNum === 1) {
+                        user1Connected = false;
+                        document.getElementById('connect1Btn').disabled = false;
+                        document.getElementById('disconnect1Btn').disabled = true;
+                        document.getElementById('scroll1Btn').disabled = true;
+                    } else {
+                        user2Connected = false;
+                        document.getElementById('connect2Btn').disabled = false;
+                        document.getElementById('disconnect2Btn').disabled = true;
+                        document.getElementById('scroll2Btn').disabled = true;
+                    }
+                };
+                
+                ws.onerror = function(error) {
+                    updateUserStatus(userNum, `${username} connection error`, 'error');
+                    addMessage(`${username} WebSocket error: ${error}`, 'error');
+                    addTestResult(`User ${userNum} Connection`, false, `WebSocket connection failed: ${error}`);
+                };
+                
+                if (userNum === 1) {
+                    ws1 = ws;
+                } else {
+                    ws2 = ws;
+                }
+                
+            } catch (error) {
+                updateUserStatus(userNum, `Connection failed: ${error.message}`, 'error');
+                addMessage(`${username} connection error: ${error.message}`, 'error');
+                addTestResult(`User ${userNum} Connection`, false, `Connection failed: ${error.message}`);
+            }
+        }
+
+        function disconnectUser(userNum) {
+            const ws = userNum === 1 ? ws1 : ws2;
+            if (ws) {
+                ws.close();
+                if (userNum === 1) {
+                    ws1 = null;
+                } else {
+                    ws2 = null;
+                }
+            }
+        }
+
+        function sendScrollUpdate(userNum) {
+            const ws = userNum === 1 ? ws1 : ws2;
+            const msgIndex = document.getElementById(`msgIndex${userNum}`).value;
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addMessage(`User ${userNum} not connected`, 'error');
+                return;
+            }
+
+            const scrollMessage = {
+                type: 'scroll_update',
+                current_message_index: parseInt(msgIndex),
+                current_message_id: `msg_${msgIndex}`
+            };
+
+            addMessage(`User ${userNum} sending scroll_update: ${JSON.stringify(scrollMessage)}`, 'info');
+            
+            try {
+                ws.send(JSON.stringify(scrollMessage));
+                addTestResult(`Scroll Update Send (User ${userNum})`, true, 
+                    `Successfully sent scroll_update for message index ${msgIndex}`);
+                
+                // Increment message index for next test
+                document.getElementById(`msgIndex${userNum}`).value = parseInt(msgIndex) + 1;
+                
+            } catch (error) {
+                addMessage(`Failed to send scroll_update: ${error.message}`, 'error');
+                addTestResult(`Scroll Update Send (User ${userNum})`, false, 
+                    `Failed to send scroll_update: ${error.message}`);
+            }
+        }
+
+        async function runFullTestSuite() {
+            addMessage('🧪 Starting full test suite...', 'info');
+            testResults = []; // Clear previous results
+            updateOverallStatus('Running test suite...', 'warning');
+            
+            // Test 1: Connect User 1
+            addMessage('Test 1: Connecting User 1...', 'info');
+            connectUser(1, 'testuser');
+            
+            // Wait for connection
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            if (user1Connected) {
+                // Test 2: Send scroll_update from User 1
+                addMessage('Test 2: Sending scroll_update from User 1...', 'info');
+                sendScrollUpdate(1);
+                
+                // Wait a moment
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Test 3: Connect User 2
+                addMessage('Test 3: Connecting User 2...', 'info');
+                connectUser(2, 'testuser2');
+                
+                // Wait for connection
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                if (user2Connected) {
+                    // Test 4: Send scroll_update from User 1 to test broadcast
+                    addMessage('Test 4: Testing scroll_update broadcast from User 1 to User 2...', 'info');
+                    sendScrollUpdate(1);
+                    
+                    // Wait for broadcast
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // Test 5: Send scroll_update from User 2 to test reverse broadcast
+                    addMessage('Test 5: Testing scroll_update broadcast from User 2 to User 1...', 'info');
+                    sendScrollUpdate(2);
+                    
+                    // Wait for broadcast
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            
+            // Final assessment
+            const successCount = testResults.filter(r => r.success).length;
+            const totalTests = testResults.length;
+            
+            if (successCount === totalTests && totalTests > 0) {
+                updateOverallStatus(`✅ All tests passed! (${successCount}/${totalTests})`, 'success');
+                addMessage(`🎉 SUCCESS: scroll_update functionality is working correctly!`, 'success');
+            } else {
+                updateOverallStatus(`❌ Some tests failed (${successCount}/${totalTests})`, 'error');
+                addMessage(`⚠️ Test results: ${successCount}/${totalTests} passed`, 'warning');
+            }
+        }
+
+        function clearMessages() {
+            messagesDiv.innerHTML = '';
+            addMessage('Messages cleared', 'info');
+        }
+
+        // Event listeners
+        document.getElementById('connect1Btn').addEventListener('click', () => connectUser(1, 'testuser'));
+        document.getElementById('disconnect1Btn').addEventListener('click', () => disconnectUser(1));
+        document.getElementById('scroll1Btn').addEventListener('click', () => sendScrollUpdate(1));
+        
+        document.getElementById('connect2Btn').addEventListener('click', () => connectUser(2, 'testuser2'));
+        document.getElementById('disconnect2Btn').addEventListener('click', () => disconnectUser(2));
+        document.getElementById('scroll2Btn').addEventListener('click', () => sendScrollUpdate(2));
+        
+        document.getElementById('runFullTestBtn').addEventListener('click', runFullTestSuite);
+        document.getElementById('clearMessagesBtn').addEventListener('click', clearMessages);
+
+        // Initial status
+        addMessage('🚀 VectorSpace scroll_update verification test loaded', 'success');
+        addMessage('Ready to test the scroll_update fix!', 'info');
+    </script>
+</body>
+</html>

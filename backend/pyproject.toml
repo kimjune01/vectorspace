@@ -17,6 +17,7 @@ dependencies = [
     "sentence-transformers>=4.1.0",
     "sqlalchemy>=2.0.41",
     "uvicorn[standard]>=0.34.3",
+    "websockets>=15.0.1",
 ]
 
 [dependency-groups]

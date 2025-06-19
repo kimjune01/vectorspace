@@ -1,8 +1,13 @@
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.routers import auth, conversation, websocket, search, admin, users
 from app.database import Base, engine
+from app.services.presence_manager import start_presence_cleanup_task
+from app.services.websocket_manager import websocket_manager
+from app.services.heartbeat_manager import get_heartbeat_manager
+from app.services.presence_metrics import presence_metrics
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,6 +41,31 @@ async def health_check():
 
 # Create tables on startup (for development)
 @app.on_event("startup")
-async def create_tables():
+async def startup_event():
+    # Create database tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    
+    # Start presence cleanup task
+    asyncio.create_task(start_presence_cleanup_task())
+    
+    # Start heartbeat manager
+    heartbeat_manager = get_heartbeat_manager(websocket_manager)
+    await heartbeat_manager.start_heartbeat_task()
+    
+    # Start presence metrics collection
+    await presence_metrics.start_metrics_collection()
+    
+    print("🚀 VectorSpace API started with enhanced presence system")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    # Stop heartbeat manager
+    heartbeat_manager = get_heartbeat_manager(websocket_manager)
+    await heartbeat_manager.stop_heartbeat_task()
+    
+    # Stop presence metrics collection
+    await presence_metrics.stop_metrics_collection()
+    
+    print("🛑 VectorSpace API shutdown complete")

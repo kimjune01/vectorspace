@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = '/api';
 
 export interface ApiError {
   detail?: string;
@@ -104,7 +104,7 @@ export class ApiClient {
 
   // Conversation endpoints
   async getConversations() {
-    return this.request<any[]>('/conversations');
+    return this.request<any[]>('/conversations/');
   }
 
   async getConversation(id: string) {
@@ -112,7 +112,7 @@ export class ApiClient {
   }
 
   async createConversation(title: string, description?: string) {
-    return this.request<any>('/conversations', {
+    return this.request<any>('/conversations/', {
       method: 'POST',
       body: JSON.stringify({ title, description }),
     });
@@ -139,7 +139,11 @@ export class ApiClient {
 
   // WebSocket URL helper
   getWebSocketUrl(conversationId: string): string {
-    const wsBase = this.baseUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+    // In development, use the same host as the frontend but with ws protocol
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsBase = `${protocol}//${host}/api`;
+    
     if (!this.token) {
       throw new Error('Authentication token required for WebSocket connection');
     }

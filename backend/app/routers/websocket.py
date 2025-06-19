@@ -9,6 +9,7 @@ from jose import JWTError, jwt
 from app.database import get_db
 from app.models import User, Conversation, ConversationParticipant, Message
 from app.services.websocket_manager import websocket_manager
+from app.services.presence_manager import presence_manager
 from app.auth import SECRET_KEY, ALGORITHM, blacklisted_tokens
 import os
 import re
@@ -99,6 +100,9 @@ async def conversation_websocket(
         # Add user as participant if not already (for public conversations)
         await ensure_participant_record(user.id, conversation_id, db)
         
+        # Record user presence
+        await presence_manager.user_joined_conversation(conversation_id, user.id, user.username)
+        
         # Send initial connection confirmation
         await websocket_manager.send_to_connection(connection_id, {
             "type": "connection_established",
@@ -138,9 +142,11 @@ async def conversation_websocket(
         logger.error(f"WebSocket connection error: {e}")
     
     finally:
-        # Clean up connection
+        # Clean up connection and presence
         if connection_id:
             await websocket_manager.disconnect(connection_id)
+        if user:
+            await presence_manager.user_left_conversation(conversation_id, user.id)
 
 
 async def ensure_participant_record(user_id: int, conversation_id: int, db: AsyncSession):
@@ -197,7 +203,8 @@ async def handle_websocket_message(
         return
     
     # Rate limiting check
-    if await is_rate_limited(user.id, connection_id):
+    rate_limited = await is_rate_limited(user.id, connection_id)
+    if rate_limited:
         await websocket_manager.send_to_connection(connection_id, {
             "type": "error",
             "message": "Rate limit exceeded. Please slow down."
@@ -205,6 +212,7 @@ async def handle_websocket_message(
         return
     
     # Route message based on type
+    
     if message_type == "send_message":
         await handle_send_message(connection_id, user, conversation_id, message_data, db)
     elif message_type == "join_conversation":
@@ -217,6 +225,10 @@ async def handle_websocket_message(
         await handle_message_history_request(connection_id, user, conversation_id, message_data, db)
     elif message_type == "mark_messages_read":
         await handle_mark_messages_read(connection_id, user, conversation_id, message_data, db)
+    elif message_type == "scroll_position_update":
+        await handle_scroll_position_update(connection_id, user, conversation_id, message_data)
+    elif message_type == "scroll_update":
+        await handle_message_scroll_update(connection_id, user, conversation_id, message_data)
     else:
         await websocket_manager.send_to_connection(connection_id, {
             "type": "error",
@@ -676,4 +688,118 @@ async def handle_mark_messages_read(
         await websocket_manager.send_to_connection(connection_id, {
             "type": "error",
             "message": "Failed to mark messages as read"
+        })
+
+
+async def handle_scroll_position_update(
+    connection_id: str,
+    user: User,
+    conversation_id: int,
+    message_data: dict
+):
+    """Handle scroll position updates from users."""
+    try:
+        # Extract scroll position data
+        scroll_position = message_data.get("scroll_position")
+        
+        if not scroll_position:
+            await websocket_manager.send_to_connection(connection_id, {
+                "type": "error",
+                "message": "Scroll position data is required"
+            })
+            return
+        
+        # Validate required fields
+        required_fields = ["scrollTop", "scrollHeight", "clientHeight", "scrollPercentage"]
+        missing_fields = [field for field in required_fields if field not in scroll_position]
+        
+        if missing_fields:
+            await websocket_manager.send_to_connection(connection_id, {
+                "type": "error",
+                "message": f"Missing required scroll position fields: {', '.join(missing_fields)}"
+            })
+            return
+        
+        # Validate numeric values
+        try:
+            scroll_top = float(scroll_position["scrollTop"])
+            scroll_height = float(scroll_position["scrollHeight"])
+            client_height = float(scroll_position["clientHeight"])
+            scroll_percentage = float(scroll_position["scrollPercentage"])
+        except (ValueError, TypeError):
+            await websocket_manager.send_to_connection(connection_id, {
+                "type": "error",
+                "message": "Scroll position values must be numeric"
+            })
+            return
+        
+        # Broadcast scroll position to other participants
+        await websocket_manager.broadcast_to_conversation(
+            conversation_id,
+            {
+                "type": "user_scroll_position",
+                "user_id": user.id,
+                "username": user.username,
+                "scroll_position": {
+                    "scrollTop": scroll_top,
+                    "scrollHeight": scroll_height,
+                    "clientHeight": client_height,
+                    "scrollPercentage": scroll_percentage
+                }
+            },
+            exclude_connection_id=connection_id  # Don't send back to sender
+        )
+        
+        # Optionally update presence manager with activity
+        await presence_manager.update_user_activity(conversation_id, user.id)
+        
+    except Exception as e:
+        logger.error(f"Error handling scroll position update: {e}")
+        await websocket_manager.send_to_connection(connection_id, {
+            "type": "error",
+            "message": "Failed to process scroll position update"
+        })
+
+
+async def handle_message_scroll_update(
+    connection_id: str,
+    user: User,
+    conversation_id: int,
+    message_data: dict
+):
+    """Handle message-level scroll position updates for presence tracking."""
+    try:
+        # Extract message scroll data
+        current_message_index = message_data.get("current_message_index")
+        current_message_id = message_data.get("current_message_id")
+        
+        # Validate the data
+        if current_message_index is None or current_message_id is None:
+            await websocket_manager.send_to_connection(connection_id, {
+                "type": "error",
+                "message": "Message index and ID are required for scroll updates"
+            })
+            return
+        
+        # Update user activity in presence manager
+        await presence_manager.update_user_activity(conversation_id, user.id)
+        
+        # Broadcast scroll position to other participants
+        await websocket_manager.broadcast_to_conversation(conversation_id, {
+            "type": "scroll_update",
+            "user_id": user.id,
+            "username": user.username,
+            "conversation_id": conversation_id,
+            "current_message_index": current_message_index,
+            "current_message_id": current_message_id,
+            "timestamp": time.time()
+        }, exclude_connection_id=connection_id)
+        
+        logger.debug(f"User {user.username} updated scroll position to message {current_message_index} in conversation {conversation_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in message scroll update: {e}")
+        await websocket_manager.send_to_connection(connection_id, {
+            "type": "error",
+            "message": "Failed to process message scroll update"
         })

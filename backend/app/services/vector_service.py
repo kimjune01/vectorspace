@@ -371,6 +371,70 @@ class VectorService:
                 'results': {'ids': [], 'documents': [], 'metadatas': []},
                 'total_found': 0
             }
+    
+    def find_similar_conversations(self, conversation_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """
+        Find conversations similar to the given conversation by its summary.
+        
+        Args:
+            conversation_id: ID of the conversation to find similar ones for
+            limit: Maximum number of similar conversations to return
+            
+        Returns:
+            List of similar conversations with similarity scores and metadata
+        """
+        try:
+            collection = self.get_or_create_collection()
+            
+            # First get the conversation's summary
+            results = collection.get(
+                ids=[conversation_id],
+                include=["documents"]
+            )
+            
+            if not results['ids'] or not results['documents'][0]:
+                # No summary found for this conversation
+                return []
+            
+            query_summary = results['documents'][0]
+            
+            # Search for similar conversations
+            similar_results = collection.query(
+                query_texts=[query_summary],
+                n_results=limit + 1,  # +1 because we'll filter out the query conversation itself
+                include=["documents", "metadatas", "distances"]
+            )
+            
+            # Format results and filter out the original conversation
+            similar_conversations = []
+            for i, conv_id in enumerate(similar_results['ids'][0]):
+                if conv_id != conversation_id:  # Don't include the conversation itself
+                    metadata = similar_results['metadatas'][0][i] if similar_results['metadatas'] else {}
+                    distance = similar_results['distances'][0][i] if similar_results['distances'] else 1.0
+                    
+                    # Convert distance to similarity score (higher is more similar)
+                    similarity_score = max(0.0, 1.0 - distance)
+                    
+                    similar_conversations.append({
+                        'id': int(conv_id),
+                        'title': metadata.get('title', 'Untitled'),
+                        'summary': similar_results['documents'][0][i] if similar_results['documents'] else '',
+                        'similarity_score': similarity_score,
+                        'is_public': metadata.get('is_public', 'true') == 'true',
+                        'created_at': metadata.get('created_at', ''),
+                        'author': {
+                            'id': int(metadata.get('user_id', 0)),
+                            'username': metadata.get('username', '')
+                        }
+                    })
+            
+            # Sort by similarity score (highest first) and limit results
+            similar_conversations.sort(key=lambda x: x['similarity_score'], reverse=True)
+            return similar_conversations[:limit]
+            
+        except Exception as e:
+            logger.error(f"Error finding similar conversations for {conversation_id}: {e}")
+            return []
 
 
 # Global instance

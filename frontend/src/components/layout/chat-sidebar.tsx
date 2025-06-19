@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircleIcon, MessageSquareIcon, Loader2, AlertTriangleIcon, SearchIcon, XIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion'; // Import Framer Motion
+import { apiClient } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatSession {
   id: string;
@@ -59,6 +61,7 @@ const SkeletonSidebarItem = () => (
 );
 
 export default function ChatSidebar({ onSessionSelect, onNewChat, currentSessionId, onSearchResultSelect }: ChatSidebarProps) {
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
@@ -75,22 +78,31 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
       setIsLoadingSessions(true);
       setSessionsError(null);
       try {
-        const response = await fetch('/api/chat/sessions');
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || `Failed to fetch sessions: ${response.status}`);
-        }
-        const apiResponse = await response.json();
-        setSessions(apiResponse.data || []);
+        const conversations = await apiClient.getConversations();
+        // Transform conversation data to match ChatSession interface
+        const sessions = conversations.map(conv => ({
+          id: conv.id.toString(),
+          title: conv.title,
+          updatedAt: conv.updated_at || conv.created_at
+        }));
+        setSessions(sessions);
       } catch (err) {
-        setSessionsError(err instanceof Error ? err.message : String(err));
+        setSessionsError(err instanceof Error ? err.message : 'Could not load chats');
       } finally {
         setIsLoadingSessions(false);
       }
     };
 
-    fetchSessions();
-  }, []);
+    // Only fetch sessions when authenticated and not loading auth state
+    if (isAuthenticated && !authLoading && user) {
+      fetchSessions();
+    } else if (!authLoading && !isAuthenticated) {
+      // User is not authenticated, clear sessions and show appropriate state
+      setSessions([]);
+      setIsLoadingSessions(false);
+      setSessionsError(null);
+    }
+  }, [isAuthenticated, authLoading, user]);
 
   const handleSearchSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();
@@ -105,14 +117,9 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
     setSearchError(null);
     setHasSearched(true);
     try {
-      const response = await fetch(`/api/chat/search?query=${encodeURIComponent(searchQuery)}&pageSize=20`); // Limiting to 20 results for now
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to search: ${response.status}`);
-      }
-      const data = await response.json();
-      setSearchResults(data.messages || []);
-      if ((data.messages || []).length === 0) {
+      const data = await apiClient.searchConversations(searchQuery, 20);
+      setSearchResults(data.conversations || []);
+      if ((data.conversations || []).length === 0) {
         // setSearchError("No results found."); // Or handle as empty results
       }
     } catch (err) {

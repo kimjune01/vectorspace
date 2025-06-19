@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Presence Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
+        .connect { background-color: #007bff; color: white; }
+        .disconnect { background-color: #dc3545; color: white; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebSocket Presence Test</h1>
+        <div id="status" class="status info">Ready to connect</div>
+        
+        <div>
+            <button id="connectBtn" class="connect">Connect to Conversation 1</button>
+            <button id="disconnectBtn" class="disconnect" disabled>Disconnect</button>
+            <button id="fetchStatsBtn" class="info">Fetch Stats</button>
+        </div>
+        
+        <div id="messages"></div>
+        
+        <script>
+            let ws = null;
+            const statusDiv = document.getElementById('status');
+            const messagesDiv = document.getElementById('messages');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const fetchStatsBtn = document.getElementById('fetchStatsBtn');
+            
+            function updateStatus(message, type = 'info') {
+                statusDiv.textContent = message;
+                statusDiv.className = 'status ' + type;
+            }
+            
+            function addMessage(message) {
+                const div = document.createElement('div');
+                div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+                messagesDiv.appendChild(div);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+            
+            async function fetchStats() {
+                try {
+                    const response = await fetch('http://localhost:8000/api/admin/stats/comprehensive');
+                    const stats = await response.json();
+                    addMessage('Current stats: ' + JSON.stringify(stats, null, 2));
+                } catch (error) {
+                    addMessage('Failed to fetch stats: ' + error.message);
+                }
+            }
+            
+            function connectWebSocket() {
+                try {
+                    // Note: This will fail due to auth, but we can see the connection attempt
+                    ws = new WebSocket('ws://localhost:8000/api/ws/conversations/1');
+                    
+                    ws.onopen = function(event) {
+                        updateStatus('Connected to WebSocket', 'success');
+                        addMessage('WebSocket connection opened');
+                        connectBtn.disabled = true;
+                        disconnectBtn.disabled = false;
+                    };
+                    
+                    ws.onmessage = function(event) {
+                        const data = JSON.parse(event.data);
+                        addMessage('Received: ' + JSON.stringify(data));
+                    };
+                    
+                    ws.onclose = function(event) {
+                        updateStatus('WebSocket connection closed', 'error');
+                        addMessage('WebSocket connection closed: ' + event.code + ' ' + event.reason);
+                        connectBtn.disabled = false;
+                        disconnectBtn.disabled = true;
+                    };
+                    
+                    ws.onerror = function(error) {
+                        updateStatus('WebSocket error occurred', 'error');
+                        addMessage('WebSocket error: ' + error);
+                    };
+                    
+                } catch (error) {
+                    updateStatus('Failed to connect: ' + error.message, 'error');
+                    addMessage('Connection error: ' + error.message);
+                }
+            }
+            
+            function disconnectWebSocket() {
+                if (ws) {
+                    ws.close();
+                    ws = null;
+                }
+            }
+            
+            connectBtn.addEventListener('click', connectWebSocket);
+            disconnectBtn.addEventListener('click', disconnectWebSocket);
+            fetchStatsBtn.addEventListener('click', fetchStats);
+            
+            // Auto-fetch initial stats
+            setTimeout(fetchStats, 500);
+        </script>
+    </div>
+</body>
+</html>

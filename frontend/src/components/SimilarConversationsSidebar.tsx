@@ -52,8 +52,9 @@ export default function SimilarConversationsSidebar({
       setIsLoading(true);
       setError(undefined);
       
-      const data = await apiClient.getSimilarConversations(currentConversation.id.toString(), 10);
-      setSimilarConversations(data.similar_conversations || []);
+      const data = await apiClient.getSimilarConversations(currentConversation.id.toString(), 20);
+      // The API returns conversations already sorted by similarity score
+      setSimilarConversations(data.conversations || []);
     } catch (error) {
       console.error('Error fetching similar conversations:', error);
       setError('Failed to load similar conversations');

@@ -1,0 +1,1526 @@
+[
+  {
+    "description": "  As VectorSpace users\n  We want the complete workflow from conversation creation to discovery to presence\n  So that the platform provides seamless AI conversation discovery and real-time engagement",
+    "elements": [
+      {
+        "description": "",
+        "id": "complete-round-trip-integration;complete-round-trip-from-typing-to-discovery-to-presence",
+        "keyword": "Scenario",
+        "line": 12,
+        "name": "Complete round-trip from typing to discovery to presence",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 4943541
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "the application is running with full integration support",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:10"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2199332
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the vector database is initialized",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:14"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 358041
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "real-time presence system is active",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:18"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 333459
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 14,
+            "name": "I am user \"alice\" with display name \"Alice\" and email \"alice@vectorspace.com\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:23"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 394305917
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 15,
+            "name": "I start a new conversation with title \"Python Machine Learning Tutorial\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:45"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 7029499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 16,
+            "name": "I send the message \"Can you explain how neural networks work in Python? I'm particularly interested in backpropagation and gradient descent.\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:59"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 7497208
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "I wait for the AI response",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:71"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1002388207
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 18,
+            "name": "I send the message \"That's helpful! Can you show me a simple implementation using numpy? I want to understand the math behind it.\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:59"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 16938666
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "I wait for the AI response",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:71"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1001865875
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 20,
+            "name": "I send the message \"Perfect! Now can you explain how to use TensorFlow for the same thing? What are the key differences?\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:59"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 23135333
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 21,
+            "name": "I wait for the AI response",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:71"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1001164000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "I send the message \"Thanks! This conversation has been really educational. I feel like I understand neural networks much better now.\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:59"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 15008417
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 23,
+            "name": "I wait for the AI response",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:71"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1001082332
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 24,
+            "name": "the conversation should have at least 1500 tokens",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:76"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1534583
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 25,
+            "name": "the conversation should be automatically summarized",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:81"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 3032309250
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 26,
+            "name": "the summary should be PII-filtered",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:103"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 900916
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 27,
+            "name": "the conversation should be archived after completion",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:108"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 709082
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 28,
+            "name": "the conversation should be embedded in the vector database",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:113"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2001814042
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 29,
+            "name": "the conversation should appear in the discovery feed",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:120"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4152500
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 32,
+            "name": "I am user \"bob\" with display name \"Bob\" and email \"bob@vectorspace.com\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:23"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 404855916
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 33,
+            "name": "I search for \"neural networks Python machine learning\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:125"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 17640792
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 34,
+            "name": "I should see Alice's conversation in the search results",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:470"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 389374
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 35,
+            "name": "the search result should show Alice's display name",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:495"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 222665
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 36,
+            "name": "the search result should show the filtered summary",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:606"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 198334
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 37,
+            "name": "the search result should have a high similarity score",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:610"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 211750
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 38,
+            "name": "I click on Alice's conversation from search results",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:499"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 193832
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 39,
+            "name": "I should navigate to the conversation view",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:620"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 158999
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 40,
+            "name": "I should see the full conversation history",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:625"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 164583
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 41,
+            "name": "I should see \"Alice\" as the conversation author",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:630"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 403582
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 42,
+            "name": "Alice should be notified that Bob has joined as a viewer",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:634"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 198167
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 45,
+            "name": "Bob scrolls through Alice's conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:504"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 168125
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 46,
+            "name": "Alice should see Bob's avatar moving next to the messages Bob is reading",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:509"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 240165
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 47,
+            "name": "Bob's scroll position should update in real-time",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:514"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 179124
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 48,
+            "name": "the presence indicator should show \"1 viewer currently reading\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:639"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 351291
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 49,
+            "name": "Bob scrolls to the message about TensorFlow",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:643"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 167625
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 50,
+            "name": "Alice should see Bob's avatar next to the TensorFlow message",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:518"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 202541
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 51,
+            "name": "Alice should be able to see which specific part Bob is interested in",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:649"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 223874
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 52,
+            "name": "Alice clicks on Bob's presence avatar",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:522"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 146208
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 53,
+            "name": "Alice's view should scroll to the same message Bob is reading",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:527"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 218624
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 54,
+            "name": "Alice should see a \"Following Bob\" indicator",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:614"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 374583
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 57,
+            "name": "Bob starts a new conversation inspired by Alice's",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:532"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 6649625
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 58,
+            "name": "Bob sends the message \"I just read Alice's great explanation of neural networks. I want to dive deeper into TensorFlow implementation. Can you help me build a CNN for image classification?\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:147"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4596833
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 59,
+            "name": "Bob waits for the AI response",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:158"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1000762791
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 60,
+            "name": "Bob sends the message \"That's exactly what I needed! Can you explain how convolutional layers work compared to the dense layers Alice discussed?\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:147"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 11676374
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 61,
+            "name": "Bob waits for the AI response",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:158"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1001354833
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 62,
+            "name": "Bob's conversation should be related to Alice's conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:543"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2319374
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 63,
+            "name": "Bob's conversation should appear in the \"Similar Conversations\" sidebar when viewing Alice's conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:550"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 2611500
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 64,
+            "name": "Alice should see Bob's new conversation in her \"Related by Community\" feed",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:556"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1158750
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 67,
+            "name": "Alice views her original conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:183"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 506957
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 68,
+            "name": "the sidebar should show Bob's related conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:562"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 507583
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 69,
+            "name": "the sidebar should indicate \"1 viewer\" for Bob's active conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:568"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1012875
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 70,
+            "name": "Alice should see Bob's mini avatar in the sidebar next to his conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:574"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 544416
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 71,
+            "name": "Alice clicks on Bob's conversation from the sidebar",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:579"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 389040
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 72,
+            "name": "Alice should navigate to Bob's conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:585"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 332458
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 73,
+            "name": "Bob should be notified that Alice has joined as a viewer",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:218"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 411207
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 74,
+            "name": "the presence system should show both users are now viewing Bob's conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:591"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 509374
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 77,
+            "name": "both conversations should be cross-referenced in the vector database",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:229"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 518000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 78,
+            "name": "searching for \"neural networks\" should return both conversations ranked by relevance",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:234"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 25161499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 79,
+            "name": "the community discovery feed should show both conversations as related",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:251"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 456417
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 80,
+            "name": "the trending topics should include \"neural networks\" and \"TensorFlow\"",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:256"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 687958
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 81,
+            "name": "both users should appear in each other's \"Recently Interacted\" lists",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:596"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 434249
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 82,
+            "name": "the semantic similarity between the conversations should be measurable",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:271"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 281667
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1407667
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@integration",
+            "line": 11
+          },
+          {
+            "name": "@round-trip",
+            "line": 11
+          },
+          {
+            "name": "@critical",
+            "line": 11
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "complete-round-trip-integration;round-trip-performance-benchmarks",
+        "keyword": "Scenario",
+        "line": 85,
+        "name": "Round-trip performance benchmarks",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1107749
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "the application is running with full integration support",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:10"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 35374
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the vector database is initialized",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:14"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 26417
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "real-time presence system is active",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:18"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 25499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 86,
+            "name": "the performance monitoring is enabled",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:278"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 220208
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 87,
+            "name": "I execute the complete round-trip workflow",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:284"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 390640542
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 88,
+            "name": "conversation creation should complete within 2 seconds",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:302"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 353917
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 89,
+            "name": "AI responses should arrive within 10 seconds",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:309"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 224083
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 90,
+            "name": "summarization should complete within 5 seconds after archiving",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:316"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 204999
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 91,
+            "name": "vector embedding should complete within 3 seconds",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:323"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 195958
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 92,
+            "name": "search results should return within 1 second",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:330"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 149124
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 93,
+            "name": "presence updates should propagate within 500ms",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:337"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 168166
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 94,
+            "name": "sidebar updates should appear within 2 seconds",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:344"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 149084
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 95,
+            "name": "cross-user notifications should arrive within 1 second",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:351"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 162207
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 240250
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@integration",
+            "line": 84
+          },
+          {
+            "name": "@performance",
+            "line": 84
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "complete-round-trip-integration;data-consistency-throughout-round-trip",
+        "keyword": "Scenario",
+        "line": 98,
+        "name": "Data consistency throughout round-trip",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 672625
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "the application is running with full integration support",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:10"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 25666
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the vector database is initialized",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:14"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 18916
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "real-time presence system is active",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:18"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 17125
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 99,
+            "name": "data integrity monitoring is enabled",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:359"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 138375
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 100,
+            "name": "I execute the complete round-trip workflow",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:284"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 381933583
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 101,
+            "name": "all conversation data should remain consistent across the database",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:364"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 341582
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 102,
+            "name": "vector embeddings should accurately represent conversation content",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:368"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 208291
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 103,
+            "name": "PII filtering should be consistent between summary and search results",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:372"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 203958
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 104,
+            "name": "presence data should be accurately maintained and cleaned up",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:376"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 178374
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 105,
+            "name": "user activity metrics should be correctly updated",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:380"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 149375
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 106,
+            "name": "conversation relationships should be properly established",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:384"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 171333
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 107,
+            "name": "no data should be lost during any phase of the workflow",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:388"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 159959
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 239833
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@integration",
+            "line": 97
+          },
+          {
+            "name": "@data-integrity",
+            "line": 97
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "complete-round-trip-integration;round-trip-resilience-and-error-recovery",
+        "keyword": "Scenario",
+        "line": 110,
+        "name": "Round-trip resilience and error recovery",
+        "steps": [
+          {
+            "keyword": "Before",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 722458
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "the application is running with full integration support",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:10"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 22582
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "the vector database is initialized",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:14"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 16207
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "real-time presence system is active",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:18"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 14499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 111,
+            "name": "error injection capabilities are enabled",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:393"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 160375
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 112,
+            "name": "I execute the round-trip workflow with simulated failures",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:398"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 169457
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 113,
+            "name": "the AI service temporarily fails during conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:403"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 150499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 114,
+            "name": "the conversation should gracefully handle the failure",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:408"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 163666
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 115,
+            "name": "users should receive appropriate error messages",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:413"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 149459
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 116,
+            "name": "the conversation state should be preserved",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:418"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 130417
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 117,
+            "name": "the AI service recovers",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:423"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 101792
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 118,
+            "name": "users should be able to continue the conversation",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:428"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 140166
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 119,
+            "name": "the summarization and indexing should complete normally",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:432"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 151499
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 120,
+            "name": "the vector database is temporarily unavailable",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:437"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 164875
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 121,
+            "name": "search should gracefully degrade",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:442"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 108082
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 122,
+            "name": "conversations should still be discoverable through other means",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:447"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 172249
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 123,
+            "name": "presence WebSocket connections are disrupted",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:452"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 130208
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 124,
+            "name": "users should automatically reconnect",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:457"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 112666
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 125,
+            "name": "presence state should be restored accurately",
+            "match": {
+              "location": "file:/Users/junekim/Documents/vectorspace/frontend/cucumber/step_definitions/round_trip_steps.js:462"
+            },
+            "result": {
+              "status": "passed",
+              "duration": 145333
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 213083
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@integration",
+            "line": 109
+          },
+          {
+            "name": "@error-handling",
+            "line": 109
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "complete-round-trip-integration",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Complete Round-Trip Integration",
+    "tags": [],
+    "uri": "features/round_trip_integration.feature"
+  }
+]

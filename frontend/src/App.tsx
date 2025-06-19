@@ -8,10 +8,15 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ChatPage from './pages/ChatPage'
 import ProfilePage from './pages/ProfilePage'
+import { DebugPanel } from './components/debug/DebugPanel'
+import { useApiLogger } from './hooks/useApiLogger'
 
 const queryClient = new QueryClient()
 
 function App() {
+  // Enable API logging in development
+  useApiLogger();
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -27,6 +32,8 @@ function App() {
                 <Route path="/profile/:username" element={<ProfilePage />} />
               </Routes>
             </main>
+            {/* Debug tools - only visible in development */}
+            <DebugPanel />
           </div>
         </Router>
         <ReactQueryDevtools initialIsOpen={false} />

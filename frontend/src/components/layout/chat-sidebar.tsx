@@ -8,6 +8,8 @@ import { PlusCircleIcon, MessageSquareIcon, Loader2, AlertTriangleIcon, SearchIc
 import { motion, AnimatePresence } from 'framer-motion'; // Import Framer Motion
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import type { ConversationsResponse, SearchResponse } from '@/types/api';
+import { EnhancedError } from '@/components/debug/EnhancedError';
 
 interface ChatSession {
   id: string;
@@ -78,9 +80,12 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
       setIsLoadingSessions(true);
       setSessionsError(null);
       try {
-        const response = await apiClient.getConversations();
-        // The API returns {conversations: [...], total: ..., etc}
-        const conversations = response.conversations || [];
+        // TypeScript now ensures we get the correct response structure
+        const response: ConversationsResponse = await apiClient.getConversations();
+        
+        // TypeScript compiler ensures `conversations` property exists and is an array
+        const conversations = response.conversations;
+        
         // Transform conversation data to match ChatSession interface
         const sessions = conversations.map(conv => ({
           id: conv.id.toString(),
@@ -89,6 +94,15 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
         }));
         setSessions(sessions);
       } catch (err) {
+        const errorContext = {
+          component: 'ChatSidebar',
+          action: 'fetchSessions',
+          authState: { isAuthenticated, authLoading, hasUser: !!user },
+          endpoint: '/conversations/',
+          error: err instanceof Error ? err.message : String(err)
+        };
+        
+        console.error('ChatSidebar: Failed to fetch conversations', errorContext);
         setSessionsError(err instanceof Error ? err.message : 'Could not load chats');
       } finally {
         setIsLoadingSessions(false);
@@ -119,9 +133,10 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
     setSearchError(null);
     setHasSearched(true);
     try {
-      const data = await apiClient.searchConversations(searchQuery, 20);
+      // TypeScript ensures we get the correct search response structure
+      const data: SearchResponse = await apiClient.searchConversations(searchQuery, 20);
       setSearchResults(data.conversations || []);
-      if ((data.conversations || []).length === 0) {
+      if (data.conversations.length === 0) {
         // setSearchError("No results found."); // Or handle as empty results
       }
     } catch (err) {
@@ -175,9 +190,19 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
       }
       if (searchError) {
         return (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 m-2 rounded-md bg-destructive/10 border border-destructive/30 text-destructive text-xs">
-            <div className="flex items-center"> <AlertTriangleIcon className="mr-2 h-4 w-4 flex-shrink-0" /> <p className="font-semibold">Search Error:</p> </div>
-            <p className="mt-1 pl-6">{searchError}</p>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <EnhancedError 
+              error={`Search failed: ${searchError}`}
+              context={{
+                component: 'ChatSidebar',
+                action: 'searchConversations',
+                searchQuery,
+                authState: { isAuthenticated, authLoading, hasUser: !!user },
+                endpoint: '/search',
+                originalError: searchError
+              }}
+              onRetry={() => handleSearchSubmit()}
+            />
           </motion.div>
         );
       }
@@ -230,9 +255,38 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
       }
       if (sessionsError) {
         return (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 m-2 rounded-md bg-destructive/10 border border-destructive/30 text-destructive text-xs">
-            <div className="flex items-center"> <AlertTriangleIcon className="mr-2 h-4 w-4 flex-shrink-0" /> <p className="font-semibold">Error:</p> </div>
-            <p className="mt-1 pl-6">{sessionsError === "Failed to fetch sessions: 401" ? "Unauthorized. Please log in again." : "Could not load chats."}</p>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <EnhancedError 
+              error={sessionsError === "Failed to fetch sessions: 401" ? "Unauthorized. Please log in again." : "Could not load chats."}
+              context={{
+                component: 'ChatSidebar',
+                action: 'fetchSessions',
+                authState: { isAuthenticated, authLoading, hasUser: !!user },
+                endpoint: '/conversations/',
+                originalError: sessionsError
+              }}
+              onRetry={() => {
+                const fetchSessions = async () => {
+                  setIsLoadingSessions(true);
+                  setSessionsError(null);
+                  try {
+                    const response: ConversationsResponse = await apiClient.getConversations();
+                    const conversations = response.conversations;
+                    const sessions = conversations.map(conv => ({
+                      id: conv.id.toString(),
+                      title: conv.title,
+                      updatedAt: conv.updated_at || conv.created_at
+                    }));
+                    setSessions(sessions);
+                  } catch (err) {
+                    setSessionsError(err instanceof Error ? err.message : 'Could not load chats');
+                  } finally {
+                    setIsLoadingSessions(false);
+                  }
+                };
+                fetchSessions();
+              }}
+            />
           </motion.div>
         );
       }

@@ -29,6 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Routing**: React Router (SPA)
 - **State Management**: TanStack Query + Zustand
 - **Authentication**: JWT with auth context
+- **Development Tools**: Comprehensive debugging suite with API logging, error handling, and state visibility
 
 ## Development Setup
 
@@ -55,6 +56,12 @@ pnpm install                   # Install dependencies
 pnpm run dev                   # Start Vite dev server (port 5173)
 pnpm run build                 # Build for production
 pnpm run preview               # Preview production build
+```
+
+#### Database Seeding (Development)
+```bash
+cd backend/backend
+uv run python seed_database.py # Seed database with test user (testuser/testpass)
 ```
 
 ## Development Guidelines
@@ -87,6 +94,13 @@ pnpm run preview               # Preview production build
 - **Responsive Design**: Mobile-first approach with T3's responsive patterns
 - **Accessibility**: Follow T3's accessible component patterns
 
+### Development & Debugging Tools
+- **API Logger**: Automatic request/response logging in development mode (`useApiLogger` hook)
+- **Debug Panel**: Real-time state visibility via floating panel in bottom-right corner
+- **Enhanced Errors**: Context-aware error displays with retry functionality and debug information
+- **Proxy Configuration**: Vite proxy setup for seamless API forwarding to backend
+- **Auto-login**: Optional auto-login (set `VITE_AUTO_LOGIN=true` in .env) for development and testing
+
 ## Key Features Implemented
 
 ### Backend Features ✅
@@ -114,6 +128,8 @@ pnpm run preview               # Preview production build
 - [x] Protected routes and authentication context
 - [x] Modern UI with Tailwind CSS design system
 - [x] State management with TanStack Query and Zustand
+- [x] Comprehensive debugging tools (API logger, debug panel, enhanced errors)
+- [x] Development automation (auto-login, database seeding)
 
 ## Project Status
 
@@ -126,3 +142,29 @@ VectorSpace is now a fully functional conversation discovery platform with:
 - Semantic search and conversation discovery
 - User authentication and profile management
 - Responsive design for all screen sizes
+- Comprehensive debugging and development tools for efficient troubleshooting
+
+## Debugging & Development Features
+
+### API Logging (`useApiLogger`)
+- **Location**: `/frontend/src/hooks/useApiLogger.ts`
+- **Purpose**: Automatic logging of all API requests/responses in development
+- **Features**: Request/response timing, headers, body logging, error tracking
+- **Usage**: Automatically active in development, access via `window.debugApiLog()`
+
+### Debug Panel (`DebugPanel`)
+- **Location**: `/frontend/src/components/debug/DebugPanel.tsx`
+- **Purpose**: Real-time visibility into application state
+- **Features**: Auth state, environment info, token status, collapsible interface
+- **Usage**: Floating panel in bottom-right corner (development only)
+
+### Enhanced Error Handling (`EnhancedError`)
+- **Location**: `/frontend/src/components/debug/EnhancedError.tsx`
+- **Purpose**: Context-aware error displays with debugging information
+- **Features**: Retry functionality, debug context, development-only details
+- **Usage**: Integrated into chat-sidebar and other components for better error UX
+
+### Development Automation
+- **Database Seeding**: `/backend/backend/seed_database.py` - Creates test user "Red Panda" (testuser/testpass)
+- **Auto-login**: Automatic authentication with test user in development mode
+- **Proxy Config**: Vite proxy configuration for seamless API forwarding (`/frontend/vite.config.ts`)

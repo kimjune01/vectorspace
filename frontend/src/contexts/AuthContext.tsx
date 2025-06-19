@@ -70,6 +70,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const attemptAutoLogin = async () => {
+      // Only attempt auto-login if explicitly enabled via environment variable
+      const autoLoginEnabled = import.meta.env.VITE_AUTO_LOGIN === 'true';
+      
+      if (!autoLoginEnabled) {
+        console.log('Auto-login disabled (set VITE_AUTO_LOGIN=true to enable)');
+        return;
+      }
+      
       try {
         console.log('Attempting auto-login with default test user...');
         const response = await apiClient.login('testuser', 'testpass');

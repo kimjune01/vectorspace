@@ -11,7 +11,15 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:cucumber": "node cucumber/run-tests.js smoke",
+    "test:cucumber:auth": "node cucumber/run-tests.js auth",
+    "test:cucumber:conversation": "node cucumber/run-tests.js conversation",
+    "test:cucumber:search": "node cucumber/run-tests.js search",
+    "test:cucumber:integration": "node cucumber/run-tests.js integration",
+    "test:cucumber:all": "node cucumber/run-tests.js all",
+    "test:cucumber:debug": "node cucumber/run-tests.js debug --headed",
+    "test:cucumber:headed": "node cucumber/run-tests.js smoke --headed"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.11",
@@ -44,6 +52,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-query": "^5.80.7",
     "@tanstack/react-query-devtools": "^5.80.7",
+    "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -67,6 +76,11 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "@babel/core": "^7.27.4",
+    "@babel/preset-env": "^7.27.2",
+    "@babel/register": "^7.27.1",
+    "@cucumber/cucumber": "^11.3.0",
+    "@cucumber/pretty-formatter": "^1.0.1",
     "@eslint/js": "^9.25.0",
     "@playwright/test": "^1.53.1",
     "@testing-library/jest-dom": "^6.6.3",

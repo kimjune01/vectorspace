@@ -28,6 +28,7 @@ VectorSpace transforms AI conversations into a social discovery experience:
 - **Real-time Chat** with WebSocket integration and streaming AI responses
 - **User Profiles** with customizable bios, images, and conversation history
 - **Responsive Design** optimized for both desktop and mobile
+- **Debugging Tools** with comprehensive developer experience features
 
 ## 🚀 Quick Start
 
@@ -44,6 +45,10 @@ uv run python main.py
 
 # Backend runs on http://localhost:8000
 # API docs available at http://localhost:8000/docs
+
+# Optional: Seed database with test user for development
+uv run python seed_database.py
+# Creates test user: testuser/testpass (Red Panda)
 ```
 
 ### Frontend Setup  
@@ -130,6 +135,12 @@ DATABASE_URL=sqlite+aiosqlite:///./conversations.db
 - **TanStack Query** - Server state management
 - **React Router** - Client-side routing
 
+### Development Tools
+- **API Logger** - Automatic request/response logging in development
+- **Debug Panel** - Real-time state visibility and debugging
+- **Enhanced Errors** - Context-aware error handling with retry functionality
+- **Auto-login** - Development mode automatic authentication
+
 ## 🚀 Project Status
 
 **VectorSpace is now feature-complete** with both backend and frontend fully implemented!
@@ -149,6 +160,7 @@ DATABASE_URL=sqlite+aiosqlite:///./conversations.db
 - Real-time chat interface with WebSocket integration
 - User profiles with customizable bios and images
 - Fully responsive design for mobile and desktop
+- Comprehensive debugging tools for enhanced developer experience
 
 ## 🤝 Contributing
 

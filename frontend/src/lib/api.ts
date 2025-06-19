@@ -1,9 +1,13 @@
-const API_BASE_URL = '/api';
+import type { 
+  ConversationsResponse, 
+  ConversationDetail, 
+  SearchResponse, 
+  AuthResponse, 
+  User,
+  ApiError 
+} from '@/types/api';
 
-export interface ApiError {
-  detail?: string;
-  message?: string;
-}
+const API_BASE_URL = '/api';
 
 export class ApiClient {
   private baseUrl: string;
@@ -49,7 +53,8 @@ export class ApiClient {
     };
 
     try {
-      const response = await fetch(url, config);
+      console.log('Making API request:', { url, config });
+      const response = await window.fetch(url, config);
 
       if (!response.ok) {
         let error: ApiError;
@@ -72,8 +77,8 @@ export class ApiClient {
   }
 
   // Auth endpoints
-  async login(username: string, password: string) {
-    const response = await this.request<{ access_token: string; token_type: string; user: any }>('/auth/login', {
+  async login(username: string, password: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     });
@@ -81,8 +86,8 @@ export class ApiClient {
     return response;
   }
 
-  async register(username: string, display_name: string, email: string, password: string, bio?: string) {
-    const response = await this.request<{ access_token: string; token_type: string; user: any }>('/auth/signup', {
+  async register(username: string, display_name: string, email: string, password: string, bio?: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ username, display_name, email, password, bio }),
     });
@@ -98,17 +103,33 @@ export class ApiClient {
     }
   }
 
-  async getProfile() {
-    return this.request<any>('/users/me');
+  async getProfile(): Promise<User> {
+    return this.request<User>('/users/me');
   }
 
   // Conversation endpoints
-  async getConversations() {
-    return this.request<any>('/conversations/');
+  async getConversations(): Promise<ConversationsResponse> {
+    const response = await this.request<ConversationsResponse>('/conversations/');
+    
+    // Runtime validation in development - would have caught our bug immediately!
+    if (process.env.NODE_ENV === 'development') {
+      if (!response.conversations || !Array.isArray(response.conversations)) {
+        console.error('🚨 API Response Validation Failed:', {
+          endpoint: '/conversations/',
+          expected: 'object with conversations array',
+          received: typeof response,
+          responseKeys: Object.keys(response || {}),
+          actualResponse: response
+        });
+        throw new Error(`Invalid API response structure from /conversations/. Expected {conversations: [...]} but got ${typeof response}`);
+      }
+    }
+    
+    return response;
   }
 
-  async getConversation(id: string) {
-    return this.request<any>(`/conversations/${id}`);
+  async getConversation(id: string): Promise<ConversationDetail> {
+    return this.request<ConversationDetail>(`/conversations/${id}`);
   }
 
   async createConversation(title: string, description?: string) {
@@ -125,8 +146,8 @@ export class ApiClient {
   }
 
   // Search endpoints
-  async searchConversations(query: string, limit: number = 20) {
-    return this.request<any>(`/search?query=${encodeURIComponent(query)}&limit=${limit}`, {
+  async searchConversations(query: string, limit: number = 20): Promise<SearchResponse> {
+    return this.request<SearchResponse>(`/search?query=${encodeURIComponent(query)}&limit=${limit}`, {
       method: 'POST',
     });
   }
@@ -139,15 +160,13 @@ export class ApiClient {
 
   // WebSocket URL helper
   getWebSocketUrl(conversationId: string): string {
-    // In development, use the same host as the frontend but with ws protocol
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsBase = `${protocol}//${host}/api`;
+    // Get WebSocket URL from environment or default to backend
+    const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000/api/ws';
     
     if (!this.token) {
       throw new Error('Authentication token required for WebSocket connection');
     }
-    return `${wsBase}/ws/conversations/${conversationId}?token=${encodeURIComponent(this.token)}`;
+    return `${wsBaseUrl}/conversations/${conversationId}?token=${encodeURIComponent(this.token)}`;
   }
 }
 

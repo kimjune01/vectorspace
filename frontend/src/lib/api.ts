@@ -4,7 +4,12 @@ import type {
   SearchResponse, 
   AuthResponse, 
   User,
-  ApiError 
+  ApiErrorResponse,
+  LoginRequest,
+  RegisterRequest,
+  ConversationCreateRequest,
+  ConversationCreateResponse,
+  SimilarConversationsResponse
 } from '@/types/api';
 
 const API_BASE_URL = '/api';
@@ -57,13 +62,20 @@ export class ApiClient {
       const response = await fetch(url, config);
 
       if (!response.ok) {
-        let error: ApiError;
+        let error: ApiErrorResponse;
         try {
           error = await response.json();
         } catch {
-          error = { message: `HTTP ${response.status}` };
+          error = { 
+            detail: `HTTP ${response.status}`, 
+            status_code: response.status,
+            error_type: response.status >= 500 ? 'server_error' : 'client_error' as any
+          };
         }
-        throw new Error(error.detail || error.message || 'API request failed');
+        const errorMessage = Array.isArray(error.detail) 
+          ? error.detail.map(e => e.message).join(', ')
+          : error.detail || error.message || 'API request failed';
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -78,26 +90,28 @@ export class ApiClient {
 
   // Auth endpoints
   async login(username: string, password: string): Promise<AuthResponse> {
+    const loginData: LoginRequest = { username, password };
     const response = await this.request<AuthResponse>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify(loginData),
     });
     this.setToken(response.access_token);
     return response;
   }
 
   async register(username: string, display_name: string, email: string, password: string, bio?: string): Promise<AuthResponse> {
+    const registerData: RegisterRequest = { username, display_name, email, password, bio };
     const response = await this.request<AuthResponse>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ username, display_name, email, password, bio }),
+      body: JSON.stringify(registerData),
     });
     this.setToken(response.access_token);
     return response;
   }
 
-  async logout() {
+  async logout(): Promise<void> {
     try {
-      await this.request('/auth/logout', { method: 'POST' });
+      await this.request<void>('/auth/logout', { method: 'POST' });
     } finally {
       this.setToken(null);
     }
@@ -132,15 +146,16 @@ export class ApiClient {
     return this.request<ConversationDetail>(`/conversations/${id}`);
   }
 
-  async createConversation(title: string, description?: string) {
-    return this.request<any>('/conversations/', {
+  async createConversation(title: string, description?: string): Promise<ConversationCreateResponse> {
+    const createData: ConversationCreateRequest = { title, description };
+    return this.request<ConversationCreateResponse>('/conversations/', {
       method: 'POST',
-      body: JSON.stringify({ title, description }),
+      body: JSON.stringify(createData),
     });
   }
 
-  async deleteConversation(id: string) {
-    return this.request(`/conversations/${id}`, {
+  async deleteConversation(id: string): Promise<void> {
+    return this.request<void>(`/conversations/${id}`, {
       method: 'DELETE',
     });
   }
@@ -152,8 +167,8 @@ export class ApiClient {
     });
   }
 
-  async getSimilarConversations(conversationId: string, limit: number = 20) {
-    return this.request<any>(`/conversations/${conversationId}/similar?limit=${limit}`, {
+  async getSimilarConversations(conversationId: string, limit: number = 20): Promise<SimilarConversationsResponse> {
+    return this.request<SimilarConversationsResponse>(`/conversations/${conversationId}/similar?limit=${limit}`, {
       method: 'GET',
     });
   }

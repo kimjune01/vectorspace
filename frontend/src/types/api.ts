@@ -31,6 +31,7 @@ export interface Message {
   conversation_id: number;
   from_user_id: number;
   role: 'user' | 'assistant' | 'system';
+  message_type: 'system' | 'chat' | 'visitor_message';
   content: string;
   timestamp: string;
   token_count: number;
@@ -74,6 +75,9 @@ export interface User {
   bio?: string;
   profile_image?: string;
   created_at: string;
+  conversation_count: number;
+  conversations_last_24h: number;
+  stripe_pattern_seed: string;
 }
 
 export interface AuthResponse {
@@ -86,6 +90,61 @@ export interface ApiError {
   detail?: string;
   message?: string;
   status?: number;
+}
+
+// Enhanced error types for better error handling
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface ApiErrorResponse {
+  detail: string | ValidationError[];
+  message?: string;
+  status_code: number;
+  error_type?: 'validation' | 'authentication' | 'authorization' | 'not_found' | 'server_error';
+}
+
+// Request body types for API calls
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  username: string;
+  display_name: string;
+  email: string;
+  password: string;
+  bio?: string;
+}
+
+export interface ConversationCreateRequest {
+  title: string;
+  description?: string;
+  is_public?: boolean;
+}
+
+export interface MessageCreateRequest {
+  content: string;
+  role?: 'user' | 'assistant' | 'system';
+  message_type?: 'chat' | 'system' | 'visitor_message';
+  parent_message_id?: number;
+}
+
+export interface SearchRequest {
+  query: string;
+  limit?: number;
+}
+
+// Response types for actions
+export interface ConversationCreateResponse extends Conversation {}
+
+export interface MessageCreateResponse extends Message {}
+
+export interface SimilarConversationsResponse {
+  conversations: Conversation[];
+  total: number;
 }
 
 // Utility type for API endpoints that might return either single items or arrays

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from app.database import get_db
 from app.models import User, Conversation
 from app.auth import get_current_user, get_current_user_optional
@@ -19,7 +19,7 @@ async def search_conversations(
     limit: int = Query(20, ge=1, le=20, description="Results per page (max 20)"),
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """
     Semantic search for conversations.
     
@@ -115,7 +115,7 @@ async def search_conversations(
 async def discover_conversations(
     limit: int = Query(20, ge=1, le=20, description="Number of conversations to return (max 20)"),
     db: AsyncSession = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """
     Browse recent public conversations for discovery.
     

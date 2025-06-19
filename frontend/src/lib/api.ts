@@ -104,7 +104,7 @@ export class ApiClient {
 
   // Conversation endpoints
   async getConversations() {
-    return this.request<any[]>('/conversations/');
+    return this.request<any>('/conversations/');
   }
 
   async getConversation(id: string) {

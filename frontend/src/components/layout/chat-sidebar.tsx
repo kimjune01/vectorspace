@@ -78,7 +78,9 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
       setIsLoadingSessions(true);
       setSessionsError(null);
       try {
-        const conversations = await apiClient.getConversations();
+        const response = await apiClient.getConversations();
+        // The API returns {conversations: [...], total: ..., etc}
+        const conversations = response.conversations || [];
         // Transform conversation data to match ChatSession interface
         const sessions = conversations.map(conv => ({
           id: conv.id.toString(),

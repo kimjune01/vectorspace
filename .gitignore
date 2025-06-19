@@ -1,0 +1,441 @@
+# VectorSpace Project .gitignore
+
+# =====================================================
+# Python Backend
+# =====================================================
+
+# Python virtual environments
+backend/.venv/
+backend/venv/
+backend/env/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
+
+# Python cache and compiled files
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/**/__pycache__/
+backend/**/*.py[cod]
+backend/**/*$py.class
+
+# Distribution / packaging
+backend/.Python
+backend/build/
+backend/develop-eggs/
+backend/dist/
+backend/downloads/
+backend/eggs/
+backend/.eggs/
+backend/lib/
+backend/lib64/
+backend/parts/
+backend/sdist/
+backend/var/
+backend/wheels/
+backend/pip-wheel-metadata/
+backend/share/python-wheels/
+backend/*.egg-info/
+backend/.installed.cfg
+backend/*.egg
+backend/MANIFEST
+
+# PyInstaller
+backend/*.manifest
+backend/*.spec
+
+# Installer logs
+backend/pip-log.txt
+backend/pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+backend/htmlcov/
+backend/.tox/
+backend/.nox/
+backend/.coverage
+backend/.coverage.*
+backend/.cache
+backend/nosetests.xml
+backend/coverage.xml
+backend/*.cover
+backend/*.py,cover
+backend/.hypothesis/
+backend/.pytest_cache/
+
+# Jupyter Notebook
+backend/*.ipynb_checkpoints
+
+# IPython
+backend/profile_default/
+backend/ipython_config.py
+
+# pyenv
+backend/.python-version
+
+# pipenv
+backend/Pipfile.lock
+
+# PEP 582
+backend/__pypackages__/
+
+# Celery stuff
+backend/celerybeat-schedule
+backend/celerybeat.pid
+
+# SageMath parsed files
+backend/*.sage.py
+
+# Environments
+backend/.env
+backend/.venv
+backend/env/
+backend/venv/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
+
+# Spyder project settings
+backend/.spyderproject
+backend/.spyproject
+
+# Rope project settings
+backend/.ropeproject
+
+# mkdocs documentation
+backend/site
+
+# mypy
+backend/.mypy_cache/
+backend/.dmypy.json
+backend/dmypy.json
+
+# Pyre type checker
+backend/.pyre/
+
+# =====================================================
+# Database Files
+# =====================================================
+
+# SQLite databases
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+backend/conversations.db*
+
+# ChromaDB vector database
+backend/chroma_db/
+backend/chroma/
+
+# Database dumps
+backend/*.sql
+backend/*.dump
+
+# =====================================================
+# Frontend (Node.js/React/Vite)
+# =====================================================
+
+# Dependencies
+frontend/node_modules/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Build outputs
+frontend/dist/
+frontend/dist-ssr/
+frontend/build/
+frontend/out/
+
+# Vite
+frontend/.vite/
+
+# Environment variables
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Testing
+frontend/coverage/
+frontend/.nyc_output/
+
+# Editor directories and files
+frontend/.vscode/*
+!frontend/.vscode/extensions.json
+frontend/.idea/
+frontend/.DS_Store
+frontend/*.suo
+frontend/*.ntvs*
+frontend/*.njsproj
+frontend/*.sln
+frontend/*.sw?
+
+# Storybook build outputs
+frontend/storybook-static/
+
+# Temporary folders
+frontend/.tmp/
+frontend/.temp/
+
+# Logs
+frontend/logs/
+frontend/*.log
+
+# TypeScript cache
+frontend/*.tsbuildinfo
+
+# Optional npm cache directory
+frontend/.npm
+
+# ESLint cache
+frontend/.eslintcache
+
+# Stylelint cache
+frontend/.stylelintcache
+
+# Microbundle cache
+frontend/.rpt2_cache/
+frontend/.rts2_cache_cjs/
+frontend/.rts2_cache_es/
+frontend/.rts2_cache_umd/
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
+frontend/playwright/.cache/
+
+# =====================================================
+# System Files
+# =====================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =====================================================
+# IDEs and Editors
+# =====================================================
+
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+# JetBrains IDEs
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*~
+*.swp
+*.swo
+*~
+Session.vim
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# =====================================================
+# Project Specific
+# =====================================================
+
+# API Keys and Secrets
+.env
+.env.local
+.env.*.local
+secrets.json
+config/secrets/
+*.pem
+*.key
+*.crt
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Server logs
+backend/server.log*
+backend/app.log*
+backend/error.log*
+
+# User uploaded files
+backend/uploads/
+backend/static/uploads/
+frontend/public/uploads/
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Documentation builds
+docs/_build/
+docs/build/
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+.nyc_output/
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# =====================================================
+# AI and ML Models (if any)
+# =====================================================
+
+# Model files
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.pb
+*.onnx
+*.tflite
+
+# Training data
+data/raw/
+data/processed/
+models/
+checkpoints/
+
+# =====================================================
+# Deployment and Production
+# =====================================================
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# PM2
+ecosystem.config.js
+
+# Serverless
+.serverless/
+
+# CDK asset staging
+.cdk.staging/
+cdk.out/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# =====================================================
+# Monitoring and Analytics
+# =====================================================
+
+# Sentry
+.sentryclirc
+
+# Analytics
+analytics/
+
+# =====================================================
+# CLAUDE.md exclusions
+# =====================================================
+
+# Don't ignore CLAUDE.md files as they contain important project context
+!CLAUDE.md
+!**/CLAUDE.md

@@ -15,6 +15,7 @@ interface ChatSession {
   id: string;
   title: string;
   updatedAt: string;
+  originalConversation?: any; // Store the full conversation object
 }
 
 // For search results
@@ -34,6 +35,7 @@ interface ChatSidebarProps {
   onNewChat: () => void;
   currentSessionId: string | null;
   onSearchResultSelect: (messageId: string, sessionId: string) => void;
+  onConversationSelect?: (conversation: any) => void;
 }
 
 const HighlightMatch: React.FC<{ text: string; query: string }> = ({ text, query }) => {
@@ -62,7 +64,7 @@ const SkeletonSidebarItem = () => (
   </div>
 );
 
-export default function ChatSidebar({ onSessionSelect, onNewChat, currentSessionId, onSearchResultSelect }: ChatSidebarProps) {
+export default function ChatSidebar({ onSessionSelect, onNewChat, currentSessionId, onSearchResultSelect, onConversationSelect }: ChatSidebarProps) {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
@@ -90,7 +92,8 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
         const sessions = conversations.map(conv => ({
           id: conv.id.toString(),
           title: conv.title,
-          updatedAt: conv.updated_at || conv.created_at
+          updatedAt: conv.updated_at || conv.created_at,
+          originalConversation: conv // Store the full conversation object
         }));
         setSessions(sessions);
       } catch (err) {
@@ -313,7 +316,10 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
                 <Button
                   variant={currentSessionId === session.id ? "secondary" : "ghost"}
                   className="w-full justify-start items-center text-sm h-auto py-2.5 px-3 group"
-                  onClick={() => onSessionSelect(session.id)}
+                  onClick={() => {
+                    // Use onSessionSelect to load the full conversation with messages
+                    onSessionSelect(session.id);
+                  }}
                   title={session.title}
                 >
                   <div className="flex flex-col items-start text-left flex-grow overflow-hidden">

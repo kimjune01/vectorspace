@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { MarkdownContent } from '@/components/ui/MarkdownContent';
 import { Send, Bot, User, Loader2, LogIn } from 'lucide-react';
 import { useWebSocket, type WebSocketMessage } from '@/hooks/useWebSocket';
 import { apiClient } from '@/lib/api';
@@ -183,7 +184,14 @@ export function ChatInterface({ conversationId, onNewMessage }: ChatInterfacePro
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
                     }`}>
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      {message.role === 'assistant' ? (
+                        <MarkdownContent 
+                          content={message.content} 
+                          className="text-sm"
+                        />
+                      ) : (
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      )}
                     </Card>
                     <span className="text-xs text-muted-foreground">
                       {formatTime(message.timestamp)}

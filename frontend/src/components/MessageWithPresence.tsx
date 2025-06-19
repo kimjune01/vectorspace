@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, Bot } from 'lucide-react';
+import { MarkdownContent } from '@/components/ui/MarkdownContent';
 import MessagePresenceAvatars from './MessagePresenceAvatars';
 
 interface Message {
@@ -74,9 +75,16 @@ export default function MessageWithPresence({
             ? 'bg-primary text-primary-foreground ml-auto' 
             : 'bg-muted'
         }`}>
-          <p className="text-sm whitespace-pre-wrap break-words">
-            {message.content}
-          </p>
+          {message.role === 'assistant' ? (
+            <MarkdownContent 
+              content={message.content} 
+              className="text-sm break-words"
+            />
+          ) : (
+            <p className="text-sm whitespace-pre-wrap break-words">
+              {message.content}
+            </p>
+          )}
         </div>
         
         <div className={`text-xs text-muted-foreground ${isUser ? 'text-right' : ''}`}>

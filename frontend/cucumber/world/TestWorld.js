@@ -57,10 +57,18 @@ class TestWorld extends World {
    * Launch a browser instance for a user
    */
   async launchBrowser(userId, options = {}) {
+    // Support both headless and headed mode from environment
+    const isHeaded = process.env.FRONTEND_E2E_HEADED === 'true';
+    
     const browser = await puppeteer.launch({
-      headless: this.config.frontend.headless,
+      headless: isHeaded ? false : (this.config.test?.headless ?? true),
       defaultViewport: { width: 1280, height: 800 },
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-web-security', // For testing
+        '--disable-features=VizDisplayCompositor'
+      ],
       ...options
     });
     

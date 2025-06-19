@@ -275,9 +275,15 @@ export default function HomePage() {
 
   const sidebarContent = (
     <EnhancedSidebar
-      onSessionSelect={(sessionId) => {
-        // Handle session selection for My Chats tab
-        console.log('Session selected:', sessionId);
+      onSessionSelect={async (sessionId) => {
+        // Handle session selection for My Chats tab - load the conversation
+        try {
+          const conversationData = await apiClient.getConversation(sessionId);
+          await handleConversationSelect(conversationData);
+        } catch (error) {
+          console.error('Failed to load conversation from session select:', error);
+          setError('Failed to load conversation');
+        }
       }}
       onNewChat={handleNewChat}
       currentSessionId={currentConversation?.id?.toString() || null}

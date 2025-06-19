@@ -38,7 +38,7 @@ export const useApiLogger = () => {
       
       // Only log API calls to avoid noise
       if (!isApiCall) {
-        return originalFetch.current!(...args);
+        return originalFetch.current!.apply(window, args);
       }
 
       const logEntry: LoggedRequest = {
@@ -71,7 +71,7 @@ export const useApiLogger = () => {
       });
       
       try {
-        const response = await originalFetch.current!(...args);
+        const response = await originalFetch.current!.apply(window, args);
         const endTime = Date.now();
         const duration = endTime - startTime;
         

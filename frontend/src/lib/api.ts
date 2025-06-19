@@ -54,7 +54,7 @@ export class ApiClient {
 
     try {
       console.log('Making API request:', { url, config });
-      const response = await window.fetch(url, config);
+      const response = await fetch(url, config);
 
       if (!response.ok) {
         let error: ApiError;

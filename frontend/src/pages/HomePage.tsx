@@ -73,13 +73,7 @@ export default function HomePage() {
     presenceUpdateHandlerRef.current = handlePresenceUpdate;
   }, [handlePresenceUpdate]);
 
-  // Redirect to login if not authenticated (but wait for auth to load)
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      console.log('HomePage: Redirecting to login - not authenticated');
-      navigate('/login');
-    }
-  }, [authLoading, isAuthenticated, navigate]);
+  // Note: Login is now optional - users can use the app without authentication
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -91,6 +85,11 @@ export default function HomePage() {
 
   const startNewConversation = async () => {
     if (!input.trim()) return;
+    
+    if (!isAuthenticated) {
+      setError('Please sign in to start a new conversation');
+      return;
+    }
     
     try {
       setError(null);
@@ -113,20 +112,18 @@ export default function HomePage() {
   const sendMessage = async (conversationId?: string) => {
     if (!input.trim()) return;
     
+    if (!isAuthenticated) {
+      setError('Please sign in to send messages');
+      return;
+    }
+    
     const targetConversationId = conversationId || currentConversation?.id;
     if (!targetConversationId) {
       await startNewConversation();
       return;
     }
     
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input,
-      role: 'user',
-      timestamp: new Date().toISOString()
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
+    // Don't add message to local state - let WebSocket handle it to prevent duplication
     const messageContent = input;
     setInput('');
     setIsLoading(true);
@@ -274,26 +271,7 @@ export default function HomePage() {
     );
   }
 
-  // Show login redirect message if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <div className="text-center">
-          <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h1 className="text-2xl font-bold mb-2">Welcome to VectorSpace</h1>
-          <p className="text-muted-foreground mb-4">Please sign in to start chatting</p>
-          <div className="flex gap-2 justify-center">
-            <Link to="/login">
-              <Button>Sign In</Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="outline">Sign Up</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Note: Removed login requirement - users can now access the app without authentication
 
   const sidebarContent = (
     <EnhancedSidebar

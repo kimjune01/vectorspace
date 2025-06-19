@@ -113,25 +113,7 @@ export default function ChatPage() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-          <p className="text-muted-foreground mb-4">
-            Please sign in to participate in conversations.
-          </p>
-          <div className="flex gap-2 justify-center">
-            <Button onClick={() => navigate('/login')}>Sign In</Button>
-            <Button variant="outline" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Home
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Note: Login is now optional - users can view and participate in conversations without authentication
 
   return (
     <div className="min-h-screen bg-background">
@@ -217,8 +199,7 @@ export default function ChatPage() {
           <ChatInterface 
             conversationId={conversation.id.toString()}
             onNewMessage={() => {
-              // Update message count by refetching or updating messages array
-              fetchConversation();
+              // Message count will be updated by WebSocket, no need to refetch
             }}
           />
         </Card>

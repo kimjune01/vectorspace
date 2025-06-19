@@ -59,11 +59,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('Profile refreshed successfully');
         } catch (error) {
           console.error('Failed to refresh profile:', error);
+          // Token is invalid, try auto-login
+          await attemptAutoLogin();
         }
       } else {
-        console.log('No token found, user not authenticated');
+        console.log('No token found, attempting auto-login');
+        await attemptAutoLogin();
       }
       setIsLoading(false);
+    };
+
+    const attemptAutoLogin = async () => {
+      try {
+        console.log('Attempting auto-login with default test user...');
+        const response = await apiClient.login('testuser', 'testpass');
+        console.log('Auto-login successful');
+        setUser(response.user);
+      } catch (error) {
+        console.error('Auto-login failed:', error);
+      }
     };
 
     initAuth();

@@ -34,6 +34,9 @@ export default function Navigation() {
           <Link to="/" className="flex items-center space-x-2">
             <MessageSquare className="h-6 w-6" />
             <span className="text-lg font-semibold">VectorSpace</span>
+            {user?.username === 'testuser' && (
+              <Badge variant="secondary" className="text-xs">DEV</Badge>
+            )}
           </Link>
 
           {/* Navigation Links */}

@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, LogIn } from 'lucide-react';
 import { useWebSocket, type WebSocketMessage } from '@/hooks/useWebSocket';
 import { apiClient } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Message } from '@/types';
 
 interface ChatInterfaceProps {
@@ -15,12 +16,13 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ conversationId, onNewMessage }: ChatInterfaceProps) {
+  const { isAuthenticated } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const wsUrl = conversationId ? apiClient.getWebSocketUrl(conversationId) : null;
+  const wsUrl = conversationId && isAuthenticated ? apiClient.getWebSocketUrl(conversationId) : null;
 
   const { isConnected, connectionStatus, sendMessage } = useWebSocket(wsUrl, {
     onMessage: (message: WebSocketMessage) => {
@@ -36,7 +38,7 @@ export function ChatInterface({ conversationId, onNewMessage }: ChatInterfacePro
       const message: Message = {
         id: parseInt(wsMessage.message_id || Date.now().toString()),
         conversation_id: parseInt(conversationId),
-        from_user_id: wsMessage.user_id ? parseInt(wsMessage.user_id) : undefined,
+        from_user_id: wsMessage.user_id || undefined,
         from_user_username: wsMessage.username,
         from_user_display_name: wsMessage.display_name,
         role: wsMessage.type === 'user_message' ? 'user' : 'assistant',
@@ -44,10 +46,15 @@ export function ChatInterface({ conversationId, onNewMessage }: ChatInterfacePro
         content: wsMessage.content || '',
         token_count: 0,
         parent_message_id: undefined,
-        timestamp: wsMessage.timestamp || new Date().toISOString(),
+        timestamp: typeof wsMessage.timestamp === 'string' ? wsMessage.timestamp : new Date().toISOString(),
       };
       
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        // Check if message already exists to prevent duplicates
+        const exists = prev.some(m => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
       onNewMessage?.(message);
     }
     
@@ -57,7 +64,11 @@ export function ChatInterface({ conversationId, onNewMessage }: ChatInterfacePro
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !isConnected) return;
+    if (!newMessage.trim()) return;
+    
+    if (!isAuthenticated) return;
+    
+    if (!isConnected) return;
 
     setIsLoading(true);
     const success = sendMessage({
@@ -121,7 +132,17 @@ export function ChatInterface({ conversationId, onNewMessage }: ChatInterfacePro
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.length === 0 ? (
+          {!isAuthenticated ? (
+            <div className="text-center py-8">
+              <LogIn className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-muted-foreground mb-2">
+                Sign in to participate in conversations
+              </p>
+              <p className="text-xs text-muted-foreground">
+                You can browse public conversations without an account
+              </p>
+            </div>
+          ) : messages.length === 0 ? (
             <div className="text-center py-8">
               <Bot className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-muted-foreground">
@@ -200,20 +221,23 @@ export function ChatInterface({ conversationId, onNewMessage }: ChatInterfacePro
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
-            disabled={!isConnected || isLoading}
+            placeholder={isAuthenticated ? "Type your message..." : "Sign in to send messages"}
+            disabled={!isAuthenticated || !isConnected || isLoading}
             className="flex-1"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim() || !isConnected || isLoading}
+            disabled={!isAuthenticated || !newMessage.trim() || !isConnected || isLoading}
             size="sm"
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Press Enter to send, Shift+Enter for new line
+          {isAuthenticated 
+            ? "Press Enter to send, Shift+Enter for new line"
+            : "Sign in to participate in conversations"
+          }
         </p>
       </div>
     </div>

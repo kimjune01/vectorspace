@@ -10,6 +10,7 @@ import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ConversationsResponse, SearchResponse } from '@/types/api';
 import { EnhancedError } from '@/components/debug/EnhancedError';
+import ChatSessionItem from './ChatSessionItem';
 
 interface ChatSession {
   id: string;
@@ -157,22 +158,6 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
     setHasSearched(false);
   };
 
-  const formatDisplayDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
-    if (date >= today) {
-      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); // Today: 3:45 PM
-    } else if (date >= yesterday) {
-      return 'Yesterday'; // Yesterday
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' }); // Older: Jun 10
-    }
-  };
-
   const truncateText = (text: string, maxLength = 100) => {
     if (text.length > maxLength) {
       return text.substring(0, maxLength) + '...';
@@ -306,32 +291,18 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-1">
           <AnimatePresence>
             {sessions.map((session, index) => (
-              <motion.div
+              <ChatSessionItem
                 key={session.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0, transition: { delay: index * 0.03 } }}
-                exit={{ opacity: 0, x: -20 }}
-                layout
-              >
-                <Button
-                  variant={currentSessionId === session.id ? "secondary" : "ghost"}
-                  className="w-full justify-start items-center text-sm h-auto py-2.5 px-3 group"
-                  onClick={() => {
-                    // Use onSessionSelect to load the full conversation with messages
-                    onSessionSelect(session.id);
-                  }}
-                  title={session.title}
-                >
-                  <div className="flex flex-col items-start text-left flex-grow overflow-hidden">
-                    <span className="font-medium text-foreground group-hover:text-foreground truncate w-full">
-                      {truncateText(session.title, 25)}
-                    </span>
-                    <span className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 mt-0.5">
-                      {formatDisplayDate(session.updatedAt)}
-                    </span>
-                  </div>
-                </Button>
-              </motion.div>
+                session={session}
+                index={index}
+                currentSessionId={currentSessionId}
+                onSessionSelect={onSessionSelect}
+                onDelete={(sessionId) => {
+                  // Remove session from local state
+                  setSessions(prev => prev.filter(s => s.id !== sessionId));
+                  // TODO: Add API call to delete session from backend
+                }}
+              />
             ))}
           </AnimatePresence>
         </motion.div>

@@ -43,7 +43,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 #### Backend
 ```bash
-cd backend/backend
+cd backend
 uv run python main.py          # Start FastAPI server (port 8000)
 uv run python -m pytest       # Run all tests
 uv run python -m pytest tests/test_profile_images.py -v  # Run specific tests
@@ -60,7 +60,7 @@ pnpm run preview               # Preview production build
 
 #### Database Seeding (Development)
 ```bash
-cd backend/backend
+cd backend
 uv run python seed_database.py # Seed database with test user (testuser/testpass)
 ```
 
@@ -114,7 +114,7 @@ uv run python seed_database.py # Seed database with test user (testuser/testpass
 - [x] Auto-archiving after 24h inactivity
 - [x] WebSocket for real-time chat
 - [x] Background task processing
-- [x] Comprehensive test suite (187 tests, ~2s runtime)
+- [x] Comprehensive test suite (229 tests, production-ready)
 - [x] Production-ready performance optimizations
 
 ### Frontend Features ✅
@@ -136,7 +136,7 @@ uv run python seed_database.py # Seed database with test user (testuser/testpass
 **All Features Complete** ✅
 
 VectorSpace is now a fully functional conversation discovery platform with:
-- Complete backend API (187+ tests, production-ready)
+- Complete backend API (229+ tests, production-ready)
 - Complete frontend application (React + TypeScript)
 - Real-time chat with WebSocket integration
 - Semantic search and conversation discovery

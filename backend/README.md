@@ -20,7 +20,7 @@ The API will be available at:
 ## Testing
 
 ```bash
-# Run all tests (187 tests in ~2 seconds)
+# Run all tests (229 tests, comprehensive coverage)
 uv run python -m pytest
 
 # Run with coverage
@@ -64,7 +64,7 @@ DATABASE_URL=sqlite+aiosqlite:///./conversations.db
 - **SQLAlchemy 2.0** - Async ORM with SQLite database  
 - **ChromaDB** - Vector database for semantic search
 - **WebSockets** - Real-time bidirectional communication
-- **pytest** - Comprehensive testing framework (187+ tests)
+- **pytest** - Comprehensive testing framework (229+ tests)
 
 ## Production Deployment
 

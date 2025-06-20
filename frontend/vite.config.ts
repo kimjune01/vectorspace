@@ -14,7 +14,23 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
+  },
+  preview: {
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'bountiful-wholeness-production-eedc.up.railway.app',
+      // Allow any Railway hosts
+      /.*\.railway\.app$/,
+    ],
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
         changeOrigin: true,
         ws: true,
       },

@@ -13,7 +13,10 @@ import type {
   SimilarConversationsResponse
 } from '@/types/api';
 
-const API_BASE_URL = '/api';
+// Use environment variable in production, fallback to proxy in development
+const API_BASE_URL = import.meta.env.PROD && import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
 
 export class BackendError extends Error {
   public readonly statusCode: number;

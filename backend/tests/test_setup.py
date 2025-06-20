@@ -17,11 +17,16 @@ sys.modules['sentence_transformers'] = mock_sentence_transformers
 
 # Mock the embedding function to return simple vectors
 class MockEmbeddingFunction:
-    def __call__(self, texts):
+    def __call__(self, input):
         # Return simple embeddings based on text length
-        if isinstance(texts, str):
-            texts = [texts]
-        return [[len(text) * 0.01 for _ in range(384)] for text in texts]
+        # Handle both list and single string inputs
+        if isinstance(input, str):
+            input = [input]
+        return [[len(text) * 0.01 for _ in range(384)] for text in input]
+    
+    def name(self):
+        """Return the name of the embedding function for ChromaDB compatibility."""
+        return "mock_embedding_function"
 
 # Patch ChromaDB embedding functions before any imports
 import chromadb.utils.embedding_functions as ef

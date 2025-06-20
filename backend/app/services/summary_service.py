@@ -27,17 +27,14 @@ class SummaryService:
         Returns the generated summary if one was created, None otherwise.
         """
         # Get conversation with messages
-        conversation_result = await db.execute(
-            select(Conversation).where(Conversation.id == conversation_id)
-        )
-        conversation = conversation_result.scalar_one_or_none()
+        conversation = await db.get(Conversation, conversation_id)
         
         if not conversation:
             return None
         
         # Check if summary already exists or if we need to generate one
         if conversation.summary_raw is not None:
-            return conversation.summary_raw
+            return conversation.summary_raw  # type: ignore
         
         # Check if conversation has reached 1500 tokens
         if not conversation.should_auto_archive():
@@ -48,7 +45,7 @@ class SummaryService:
         
         if summary:
             # Store both raw and filtered versions
-            conversation.summary_raw = summary
+            conversation.summary_raw = summary  # type: ignore
             conversation.summary_public = self.pii_filter.filter_text(summary)
             await db.commit()
             
@@ -82,74 +79,34 @@ class SummaryService:
         
         # For now, use extractive summarization
         # In production, this would integrate with an AI service
-        return self._generate_extractive_summary(messages)
+        return self._generate_extractive_summary(list(messages))
     
     def _generate_extractive_summary(self, messages: List[Message]) -> str:
-        """Generate an extractive summary from messages.
+        """Generate a short, topical summary for sidebar display.
         
-        This is a simple implementation. In production, you'd use:
-        - AI models (OpenAI, Anthropic) for abstractive summarization
-        - More sophisticated extractive techniques
-        - Topic modeling and clustering
+        This summary is intended for a UI sidebar and is generated from the
+        first user message in the conversation. It is truncated to 7 words.
         """
         if not messages:
             return ""
-        
-        # Get conversation flow
-        user_messages = [msg for msg in messages if msg.role == "user"]
-        ai_messages = [msg for msg in messages if msg.role == "assistant"]
-        
-        if not user_messages:
-            return "System conversation with no user input."
-        
-        # Extract key elements
-        first_question = user_messages[0].content
-        last_question = user_messages[-1].content if len(user_messages) > 1 else None
-        
-        # Get representative AI response (middle or last)
-        representative_response = ""
-        if ai_messages:
-            middle_idx = len(ai_messages) // 2
-            representative_response = ai_messages[middle_idx].content
-        
-        # Count topics/questions
-        question_count = len(user_messages)
-        total_messages = len(messages)
-        
-        # Generate summary
-        summary_parts = []
-        
-        # Opening
-        if question_count == 1:
-            summary_parts.append(f"User asked: {self._truncate_text(first_question, 100)}")
+
+        first_user_message_content = next(
+            (msg.content for msg in messages if msg.role == "user"), 
+            None
+        )
+
+        if not first_user_message_content:
+            first_message_content = next((msg.content for msg in messages), None)
+            if not first_message_content:
+                return "New Conversation"
+            words = first_message_content.split()
         else:
-            summary_parts.append(f"User asked {question_count} questions starting with: {self._truncate_text(first_question, 80)}")
-            if last_question and last_question != first_question:
-                summary_parts.append(f"Final question: {self._truncate_text(last_question, 80)}")
+            words = first_user_message_content.split()
         
-        # AI response summary
-        if representative_response:
-            summary_parts.append(f"AI provided: {self._truncate_text(representative_response, 150)}")
+        if len(words) > 7:
+            return " ".join(words[:7]) + "..."
         
-        # Conversation stats
-        summary_parts.append(f"Conversation included {total_messages} messages covering various aspects of the topic.")
-        
-        # Join and ensure reasonable length (~500 tokens / ~2000 characters)
-        summary = " ".join(summary_parts)
-        return self._truncate_text(summary, 2000)
-    
-    def _truncate_text(self, text: str, max_length: int) -> str:
-        """Truncate text to maximum length, ending at word boundary."""
-        if len(text) <= max_length:
-            return text
-        
-        truncated = text[:max_length]
-        # Find last space to avoid cutting words
-        last_space = truncated.rfind(' ')
-        if last_space > max_length * 0.8:  # Only if we don't lose too much
-            truncated = truncated[:last_space]
-        
-        return truncated + "..."
+        return " ".join(words)
     
     async def force_generate_summary(
         self, 
@@ -170,13 +127,10 @@ class SummaryService:
         
         if summary:
             # Get conversation and update summaries
-            conversation_result = await db.execute(
-                select(Conversation).where(Conversation.id == conversation_id)
-            )
-            conversation = conversation_result.scalar_one_or_none()
+            conversation = await db.get(Conversation, conversation_id)
             
             if conversation:
-                conversation.summary_raw = summary
+                conversation.summary_raw = summary  # type: ignore
                 conversation.summary_public = self.pii_filter.filter_text(summary)
                 await db.commit()
                 
@@ -201,22 +155,19 @@ class SummaryService:
             from app.models import User
             
             # Get user info for metadata
-            user_result = await db.execute(
-                select(User).where(User.id == conversation.user_id)
-            )
-            user = user_result.scalar_one_or_none()
+            user = await db.get(User, conversation.user_id)
             
             if user:
                 # Use the filtered summary for embedding to ensure no PII
                 filtered_summary = conversation.summary_public or self.pii_filter.filter_text(summary)
                 
                 success = await vector_service.store_conversation_embedding(
-                    conversation_id=conversation.id,
-                    summary=filtered_summary,
-                    user_id=user.id,
-                    username=user.username,
-                    display_name=user.display_name,
-                    title=conversation.title,
+                    conversation_id=conversation.id,  # type: ignore
+                    summary=filtered_summary,  # type: ignore
+                    user_id=user.id,  # type: ignore
+                    username=user.username,  # type: ignore
+                    display_name=user.display_name,  # type: ignore
+                    title=conversation.title,  # type: ignore
                     created_at=conversation.created_at.isoformat()
                 )
                 
@@ -227,6 +178,20 @@ class SummaryService:
             
         except Exception as e:
             print(f"Error storing embedding: {e}")
+    
+    def _truncate_text(self, text: str, max_length: int) -> str:
+        """Truncate text to max_length at word boundary."""
+        if len(text) <= max_length:
+            return text
+        
+        # Find the last space within max_length
+        truncated = text[:max_length]
+        last_space = truncated.rfind(' ')
+        
+        if last_space > 0:
+            truncated = truncated[:last_space]
+        
+        return truncated + "..."
     
     async def _update_conversation_title(self, conversation_id: int, summary: str, db: AsyncSession):
         """Update conversation title based on new summary."""
@@ -242,15 +207,12 @@ class SummaryService:
             
             if new_title:
                 # Get conversation and update title
-                conversation_result = await db.execute(
-                    select(Conversation).where(Conversation.id == conversation_id)
-                )
-                conversation = conversation_result.scalar_one_or_none()
+                conversation = await db.get(Conversation, conversation_id)
                 
                 if conversation and new_title != conversation.title:
                     # Only update if title appears to be auto-generated (not custom)
-                    if not title_service._is_custom_title(conversation.title):
-                        conversation.title = new_title
+                    if not title_service._is_custom_title(conversation.title):  # type: ignore
+                        conversation.title = new_title  # type: ignore
                         await db.commit()
                         print(f"Updated title for conversation {conversation_id}: {new_title}")
                     else:

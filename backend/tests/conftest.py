@@ -30,6 +30,8 @@ def _database_url():
 async def engine(_database_url):
     """Create an async SQLAlchemy engine for testing - shared across session."""
     from app.database import Base
+    # Import all models to ensure they're registered with Base.metadata
+    import app.models  # This registers all model classes with Base
     
     # Use in-memory database for speed
     engine = create_async_engine(
@@ -50,6 +52,8 @@ async def engine(_database_url):
 async def db_session(engine):
     """Create a new database session for each test."""
     from app.database import Base
+    # Ensure models are imported
+    import app.models
     
     # Clean all tables before each test
     async with engine.begin() as conn:

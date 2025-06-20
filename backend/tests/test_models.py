@@ -279,8 +279,8 @@ class TestConversationModel:
         # Should not trigger auto-archive yet
         assert not conversation.should_auto_archive()
         
-        # Increase token count beyond threshold
-        conversation.token_count = 1200
+        # Increase token count beyond threshold (1500+)
+        conversation.token_count = 1600
         
         # Should trigger auto-archive now
         assert conversation.should_auto_archive()
@@ -373,7 +373,7 @@ class TestMessageModel:
         # Test extended fields
         assert messages_list[0].from_user_id == user.id
         assert messages_list[1].from_user_id is None  # AI message
-        assert messages_list[0].token_count == 0  # Default
+        assert messages_list[0].token_count > 0  # Auto-calculated from content
         assert messages_list[0].message_type == "chat"  # Default
     
     @pytest.mark.asyncio
@@ -549,7 +549,7 @@ class TestMessageModel:
         db_session.add(default_message)
         await db_session.commit()
         
-        assert default_message.token_count == 0  # Default value
+        assert default_message.token_count > 0  # Auto-calculated from content
 
 
 class TestPasswordResetTokenModel:

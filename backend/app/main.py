@@ -1,4 +1,5 @@
 import asyncio
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -69,3 +70,11 @@ async def shutdown_event():
     await presence_metrics.stop_metrics_collection()
     
     print("🛑 VectorSpace API shutdown complete")
+
+# Serve frontend static files in production
+if os.getenv("ENVIRONMENT") == "production":
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+    if os.path.exists(static_dir):
+        from fastapi.staticfiles import StaticFiles
+        app.mount("/", StaticFiles(directory=static_dir, html=True), name="frontend")
+        print(f"📁 Serving frontend from {static_dir}")

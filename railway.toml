@@ -1,0 +1,33 @@
+[build]
+builder = "nixpacks"
+buildCommand = "chmod +x railway-build.sh && ./railway-build.sh"
+
+[deploy]
+startCommand = "cd backend && uv run python main.py"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "vectorspace"
+plan = "hobby"
+
+[services.domains]
+"$default" = true
+
+[services.envs]
+PORT = "8000"
+PYTHONPATH = "/app/backend"
+DATABASE_URL = { fromService = "vectorspace-db", property = "connectionString" }
+ENVIRONMENT = "production"
+
+[[databases]]
+name = "vectorspace-db"
+plan = "hobby"
+type = "postgresql"
+
+[[volumes]]
+name = "vectorspace-data"
+mountPath = "/app/data"
+projectPath = "data"

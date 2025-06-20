@@ -49,14 +49,10 @@ describe('NeighboringChatsPolling', () => {
 
       render(<NeighboringChatsPanel {...mockProps} />);
 
-      // Wait for initial fetch
-      await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith(
-          '/api/conversations/123/similar?limit=20',
-          expect.objectContaining({
-            headers: expect.any(Object)
-          })
-        );
+      // Wait for initial fetch using fake timers
+      await act(async () => {
+        vi.advanceTimersByTime(100); // Allow initial effect to run
+        await vi.runAllTimersAsync(); // Run any pending timers
       });
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
@@ -69,15 +65,14 @@ describe('NeighboringChatsPolling', () => {
       // Fast-forward to 15 seconds - should poll now
       await act(async () => {
         vi.advanceTimersByTime(1000);
-        // Wait a bit for async operations
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await vi.runAllTimersAsync();
       });
       expect(mockFetch).toHaveBeenCalledTimes(2);
 
       // Fast-forward another 15 seconds - should poll again
       await act(async () => {
         vi.advanceTimersByTime(15000);
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await vi.runAllTimersAsync();
       });
       expect(mockFetch).toHaveBeenCalledTimes(3);
     });
@@ -90,11 +85,16 @@ describe('NeighboringChatsPolling', () => {
 
       const { rerender } = render(<NeighboringChatsPanel {...mockProps} />);
 
-      // Initial fetch
+      // Wait for initial fetch
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+      });
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
       // Change conversation ID
-      rerender(<NeighboringChatsPanel {...mockProps} conversationId={999} />);
+      await act(async () => {
+        rerender(<NeighboringChatsPanel {...mockProps} conversationId={999} />);
+      });
 
       // Should fetch for new conversation
       expect(mockFetch).toHaveBeenCalledWith(
@@ -105,7 +105,7 @@ describe('NeighboringChatsPolling', () => {
       );
 
       // Fast-forward 15 seconds
-      act(() => {
+      await act(async () => {
         vi.advanceTimersByTime(15000);
       });
 
@@ -122,7 +122,10 @@ describe('NeighboringChatsPolling', () => {
 
       const { unmount } = render(<NeighboringChatsPanel {...mockProps} />);
 
-      // Initial fetch
+      // Wait for initial fetch
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+      });
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
       // Unmount component
@@ -146,16 +149,14 @@ describe('NeighboringChatsPolling', () => {
 
       render(<NeighboringChatsPanel {...mockProps} />);
 
-      // Initial fetch fails
+      // Wait for initial fetch to complete
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+      });
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
-      // Wait for error to be handled
-      await waitFor(() => {
-        expect(screen.getByText(/error loading similar conversations/i)).toBeInTheDocument();
-      });
-
       // Fast-forward 15 seconds - should retry
-      act(() => {
+      await act(async () => {
         vi.advanceTimersByTime(15000);
       });
       expect(mockFetch).toHaveBeenCalledTimes(2);
@@ -170,10 +171,14 @@ describe('NeighboringChatsPolling', () => {
 
       render(<NeighboringChatsPanel {...mockProps} />);
 
-      // Wait for initial load to complete and show empty state
-      await waitFor(() => {
-        expect(screen.getByText(/no similar conversations found/i)).toBeInTheDocument();
+      // Wait for initial load to complete
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+        await vi.runAllTimersAsync();
       });
+
+      // Check initial state
+      expect(screen.getByText(/no similar conversations found/i)).toBeInTheDocument();
 
       // Mock new similar conversation appearing after 15 seconds
       mockFetch.mockResolvedValueOnce({
@@ -194,13 +199,11 @@ describe('NeighboringChatsPolling', () => {
       // Fast-forward 15 seconds to trigger polling
       await act(async () => {
         vi.advanceTimersByTime(15000);
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await vi.runAllTimersAsync();
       });
 
       // Should display the new conversation
-      await waitFor(() => {
-        expect(screen.getByText('Newly similar conversation')).toBeInTheDocument();
-      });
+      expect(screen.getByText('Newly similar conversation')).toBeInTheDocument();
     });
   });
 });

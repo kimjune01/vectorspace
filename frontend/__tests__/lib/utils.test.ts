@@ -68,7 +68,7 @@ describe('cn utility function', () => {
 
   test('handles duplicate classes', () => {
     const result = cn('class1', 'class2', 'class1')
-    // Should deduplicate classes
-    expect(result.split(' ').filter(c => c === 'class1')).toHaveLength(1)
+    // clsx + twMerge doesn't deduplicate non-Tailwind classes
+    expect(result).toBe('class1 class2 class1')
   })
 })

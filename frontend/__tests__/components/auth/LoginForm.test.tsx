@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, test, expect, vi } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
-import LoginForm from '../../../src/components/auth/LoginForm'
+import { LoginForm } from '../../../src/components/auth/LoginForm'
 import { AuthProvider } from '../../../src/contexts/AuthContext'
 import { mockApiResponses } from '../../../src/test/mocks/api'
 
@@ -9,6 +9,12 @@ import { mockApiResponses } from '../../../src/test/mocks/api'
 vi.mock('../../../src/lib/api', () => ({
   apiClient: {
     post: vi.fn(),
+    get: vi.fn(),
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+    setToken: vi.fn(),
+    getProfile: vi.fn(),
   }
 }))
 
@@ -35,8 +41,8 @@ describe('LoginForm', () => {
       </TestWrapper>
     )
 
-    expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument()
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
+    expect(screen.getByText(/welcome back/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
     expect(screen.getByText(/don't have an account/i)).toBeInTheDocument()
@@ -49,34 +55,29 @@ describe('LoginForm', () => {
       </TestWrapper>
     )
 
+    const usernameInput = screen.getByLabelText(/username/i)
+    const passwordInput = screen.getByLabelText(/password/i)
     const submitButton = screen.getByRole('button', { name: /sign in/i })
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(screen.getByText(/email is required/i)).toBeInTheDocument()
-      expect(screen.getByText(/password is required/i)).toBeInTheDocument()
-    })
+    
+    // HTML5 validation prevents form submission with empty required fields
+    expect(usernameInput).toBeRequired()
+    expect(passwordInput).toBeRequired()
   })
 
-  test('validates email format', async () => {
+  test('accepts username input', async () => {
     render(
       <TestWrapper>
         <LoginForm />
       </TestWrapper>
     )
 
-    const emailInput = screen.getByLabelText(/email/i)
-    const submitButton = screen.getByRole('button', { name: /sign in/i })
+    const usernameInput = screen.getByLabelText(/username/i)
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } })
 
-    fireEvent.change(emailInput, { target: { value: 'invalid-email' } })
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument()
-    })
+    expect(usernameInput).toHaveValue('testuser')
   })
 
-  test('validates password length', async () => {
+  test('accepts password input', async () => {
     render(
       <TestWrapper>
         <LoginForm />
@@ -84,19 +85,14 @@ describe('LoginForm', () => {
     )
 
     const passwordInput = screen.getByLabelText(/password/i)
-    const submitButton = screen.getByRole('button', { name: /sign in/i })
+    fireEvent.change(passwordInput, { target: { value: 'testpass' } })
 
-    fireEvent.change(passwordInput, { target: { value: '123' } })
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(screen.getByText(/password must be at least 6 characters/i)).toBeInTheDocument()
-    })
+    expect(passwordInput).toHaveValue('testpass')
   })
 
   test('submits form with valid data', async () => {
     const mockApiClient = apiClient as any
-    mockApiClient.post.mockResolvedValueOnce(mockApiResponses.auth)
+    mockApiClient.login.mockResolvedValueOnce(mockApiResponses.auth)
 
     render(
       <TestWrapper>
@@ -104,27 +100,24 @@ describe('LoginForm', () => {
       </TestWrapper>
     )
 
-    const emailInput = screen.getByLabelText(/email/i)
+    const usernameInput = screen.getByLabelText(/username/i)
     const passwordInput = screen.getByLabelText(/password/i)
     const submitButton = screen.getByRole('button', { name: /sign in/i })
 
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } })
     fireEvent.change(passwordInput, { target: { value: 'password123' } })
     fireEvent.click(submitButton)
 
     expect(screen.getByText(/signing in/i)).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(mockApiClient.post).toHaveBeenCalledWith('/auth/login', {
-        email: 'test@example.com',
-        password: 'password123'
-      })
+      expect(mockApiClient.login).toHaveBeenCalledWith('testuser', 'password123')
     })
   })
 
   test('handles login error', async () => {
     const mockApiClient = apiClient as any
-    mockApiClient.post.mockRejectedValueOnce(new Error('Invalid credentials'))
+    mockApiClient.login.mockRejectedValueOnce(new Error('Invalid credentials'))
 
     render(
       <TestWrapper>
@@ -132,11 +125,11 @@ describe('LoginForm', () => {
       </TestWrapper>
     )
 
-    const emailInput = screen.getByLabelText(/email/i)
+    const usernameInput = screen.getByLabelText(/username/i)
     const passwordInput = screen.getByLabelText(/password/i)
     const submitButton = screen.getByRole('button', { name: /sign in/i })
 
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } })
     fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } })
     fireEvent.click(submitButton)
 

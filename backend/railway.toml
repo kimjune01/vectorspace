@@ -1,6 +1,7 @@
 [build]
-builder = "nixpacks"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "uv run python main.py"
-healthcheckPath = "/api/health"
+startCommand = "python main.py"
+healthcheckPath = "/health"

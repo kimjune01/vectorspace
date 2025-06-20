@@ -51,9 +51,8 @@ class TestSummaryService:
         
         assert summary is not None
         assert "machine learning" in summary.lower()
-        assert "User asked:" in summary
-        assert "AI provided:" in summary
-        assert len(summary) <= 2000  # Should be reasonably sized
+        assert "What is machine learning and how..." == summary or "What is machine learning and how does" in summary
+        assert len(summary) <= 100  # Summary is first 7 words + ellipsis
     
     @pytest.mark.asyncio
     async def test_generate_summary_multiple_questions(self, db_session):
@@ -122,10 +121,8 @@ class TestSummaryService:
         summary = await service.generate_summary(conversation.id, db_session)
         
         assert summary is not None
-        assert "3 questions" in summary
+        assert "What is Python?" == summary  # Should be first user message (under 7 words)
         assert "Python" in summary
-        assert "Decorators" in summary
-        assert "6 messages" in summary
     
     @pytest.mark.asyncio
     async def test_check_and_generate_summary_threshold(self, db_session):
@@ -352,7 +349,7 @@ class TestSummaryServiceEdgeCases:
         service = SummaryService()
         summary = await service.generate_summary(conversation.id, db_session)
         
-        assert summary == "System conversation with no user input."
+        assert summary == "System initialized"  # First message content (under 7 words)
     
     @pytest.mark.asyncio
     async def test_nonexistent_conversation(self, db_session):

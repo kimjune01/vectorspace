@@ -1,18 +1,120 @@
-node_modules/
-.git/
+# Git and version control
+.git
+.gitignore
+.gitattributes
+
+# Python cache and bytecode
 __pycache__/
-*.pyc
-.pytest_cache/
-.coverage
-tests/
-*.log
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
 .env
-.venv/
-*.db
-chroma_db/
-.DS_Store
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+htmlcov/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Development and debugging files
+*.log
+debug_*.py
+test_*.py
+*_test.py
+tests/
+pytest.ini
+
+# Documentation
 *.md
 README*
-DEPLOYMENT*
-CUCUMBER*
-LOCAL_SETUP*
+docs/
+*.rst
+
+# Development scripts
+seed_*.py
+create_test_user.py
+debug_*.py
+populate_vector_db.py
+simple_*.py
+test_*.py
+*_test.html
+
+# Database files (will be created in container)
+*.db
+*.sqlite
+*.sqlite3
+conversations.db
+vectorspace.db
+
+# Logs
+*.log
+server*.log
+frontend.log
+backend.log
+
+# ChromaDB data (will be created in container)
+chroma_db/
+
+# Railway specific
+railway.toml
+
+# Development configs
+.env.local
+.env.development
+.env.test
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Corpus data
+corpus/
+
+# Development HTML files
+*.html

@@ -151,6 +151,19 @@ This is a **complete, production-ready backend** for a conversation discovery pl
 4. **Scales Efficiently** - Async architecture with background task processing
 5. **Maintains Data Quality** - Auto-archiving, summarization, and cleanup
 
+## 🚂 Railway Deployment
+
+**Note: This project is configured for Railway deployment** with `railway.toml` configuration files.
+
+Railway automatically handles:
+- Docker builds from your repository
+- Environment variable management
+- PostgreSQL database provisioning
+- Automatic SSL certificates
+- Custom domain setup
+
+For Railway-specific deployment instructions, see the `railway.toml` files in both backend and frontend directories.
+
 ## 🐳 Docker Optimization
 
 ### Production Docker Build Recommendations
@@ -215,13 +228,14 @@ dev = [
 ## 🚀 Next Steps
 
 ### Immediate Production Considerations
-1. **Docker Image Optimization** - Implement multi-stage builds with --no-dev
-2. **Replace Mock AI Service** - Integrate with OpenAI, Anthropic, or other AI providers
-3. **Email Service Setup** - Configure SMTP for password resets (optional)
-4. **File Storage** - Add profile image upload with S3 or similar
-5. **Production Database** - Migrate from SQLite to PostgreSQL
-6. **Redis Integration** - Replace in-memory rate limiting and blacklists
-7. **Environment Secrets** - Secure JWT keys and API credentials
+1. **Railway Deployment** - Deploy using existing `railway.toml` configurations
+2. **Docker Image Optimization** - Implement multi-stage builds with --no-dev
+3. **Replace Mock AI Service** - Integrate with OpenAI, Anthropic, or other AI providers
+4. **Email Service Setup** - Configure SMTP for password resets (optional)
+5. **File Storage** - Add profile image upload with S3 or similar
+6. **Production Database** - Railway PostgreSQL is already configured
+7. **Redis Integration** - Replace in-memory rate limiting and blacklists
+8. **Environment Secrets** - Configure in Railway dashboard
 
 ### Scaling Considerations
 1. **Caching Layer** - Add Redis for search results and user profiles

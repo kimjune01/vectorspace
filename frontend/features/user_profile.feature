@@ -71,3 +71,44 @@ Feature: Public User Profiles
     When the conversation appears on a profile
     Then all personal information should be filtered
     And show [phone], [address], and [email] placeholders instead
+
+  Scenario: Navigate from conversation to author profile
+    Given I am viewing the conversation discovery page
+    And there are conversations by user "alice123" with display name "Alice"
+    When I click on the author name "Alice" next to a conversation
+    Then I should navigate to the profile page for "alice123"
+    And I should NOT navigate to the conversation itself
+    And the profile should show Alice's display name and recent conversations
+
+  Scenario: Author attribution in conversation listings
+    Given user "alice123" exists with display name "Alice" 
+    And user "alice123" has public conversations
+    When I view the conversation discovery page
+    Then I should see "Alice" as the author name for her conversations
+    And the author name should be clickable
+    And I should NOT see "User {user_id}" or the username "alice123"
+    And clicking the author name should link to "/profile/alice123"
+
+  Scenario: Author links in search results
+    Given user "alice123" has conversations about "machine learning"
+    When I search for "machine learning"
+    Then the search results should show conversations by "Alice"
+    And the author name should be clickable
+    And clicking the author should take me to Alice's profile
+
+  Scenario: Navigate to own profile from navigation
+    Given I am logged in as "alice123" with display name "Alice"
+    When I look at the navigation bar
+    Then I should see "Alice" displayed instead of "Welcome, alice123!"
+    And the display name should be clickable
+    When I click on my display name "Alice" in the navigation
+    Then I should navigate to my profile page "/profile/alice123"
+    And I should see my own profile with my conversations and bio
+
+  Scenario: Settings menu remains accessible
+    Given I am logged in as "alice123"
+    When I look at the navigation bar
+    Then I should see a settings icon next to my display name
+    When I click the settings icon
+    Then I should see a dropdown menu with "Settings" and "Sign Out" options
+    And I should NOT see a duplicate "Profile" option in the dropdown

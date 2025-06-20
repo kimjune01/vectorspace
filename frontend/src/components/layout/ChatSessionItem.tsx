@@ -69,14 +69,15 @@ const ChatSessionItem: React.FC<ChatSessionItemProps> = ({
       "Title": session.title,
       "Last Updated": session.updatedAt,
       "Created At": session.originalConversation?.created_at || "N/A",
-      "Status": session.originalConversation?.status || "N/A",
-      "Visibility": session.originalConversation?.visibility || "N/A",
+      "Visibility": session.originalConversation?.is_public ? "Public" : "Private",
       "User ID": session.originalConversation?.user_id || "N/A",
-      "Summary": session.originalConversation?.summary || "N/A",
-      "Archive Status": session.originalConversation?.archived ? "Archived" : "Active",
-      "Total Messages": session.originalConversation?.total_messages || "N/A",
-      "AI Model": session.originalConversation?.ai_model || "N/A",
-      "System Prompt": session.originalConversation?.system_prompt || "N/A"
+      "Summary": session.originalConversation?.summary_public || "N/A",
+      "Archive Status": session.originalConversation?.archived_at ? "Archived" : "Active",
+      "Archived At": session.originalConversation?.archived_at || "N/A",
+      "Token Count": session.originalConversation?.token_count || "N/A",
+      "View Count": session.originalConversation?.view_count || "N/A",
+      "Hidden from Profile": session.originalConversation?.is_hidden_from_profile ? "Yes" : "No",
+      "Last Message At": session.originalConversation?.last_message_at || "N/A"
     };
 
     return Object.entries(metadata)

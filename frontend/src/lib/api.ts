@@ -1,7 +1,8 @@
 import type { 
   ConversationsResponse, 
   ConversationDetail, 
-  SearchResponse, 
+  SearchResponse,
+  DiscoverResponse, 
   AuthResponse, 
   User,
   ApiErrorResponse,
@@ -13,6 +14,39 @@ import type {
 } from '@/types/api';
 
 const API_BASE_URL = '/api';
+
+export class BackendError extends Error {
+  public readonly statusCode: number;
+  public readonly errorType: 'network' | 'server' | 'timeout' | 'client_error' | 'server_error';
+  public readonly timestamp: Date;
+
+  constructor(message: string, statusCode: number, errorType: 'network' | 'server' | 'timeout' | 'client_error' | 'server_error') {
+    super(message);
+    this.name = 'BackendError';
+    this.statusCode = statusCode;
+    this.errorType = this.normalizeErrorType(errorType, statusCode);
+    this.timestamp = new Date();
+  }
+
+  private normalizeErrorType(type: string, statusCode: number): 'network' | 'server' | 'timeout' {
+    if (statusCode === 0) return type as 'network' | 'timeout';
+    if (statusCode >= 500) return 'server';
+    if (statusCode === 408 || statusCode === 504) return 'timeout';
+    return 'network'; // Default for 4xx and other issues
+  }
+
+  public isNetworkError(): boolean {
+    return this.errorType === 'network' || this.statusCode === 0;
+  }
+
+  public isServerError(): boolean {
+    return this.errorType === 'server' || this.statusCode >= 500;
+  }
+
+  public isTimeoutError(): boolean {
+    return this.errorType === 'timeout' || this.statusCode === 408 || this.statusCode === 504;
+  }
+}
 
 export class ApiClient {
   private baseUrl: string;
@@ -75,16 +109,30 @@ export class ApiClient {
         const errorMessage = Array.isArray(error.detail) 
           ? error.detail.map(e => e.message).join(', ')
           : error.detail || error.message || 'API request failed';
-        throw new Error(errorMessage);
+        
+        // Create enhanced error with backend connectivity info
+        const enhancedError = new BackendError(errorMessage, response.status, 'server_error');
+        throw enhancedError;
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof BackendError) {
         throw error;
       }
-      throw new Error('Network error');
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        // Network connectivity issue
+        throw new BackendError('Unable to connect to backend servers', 0, 'network');
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        // Request timeout
+        throw new BackendError('Request timed out', 0, 'timeout');
+      }
+      if (error instanceof Error) {
+        throw new BackendError(error.message, 0, 'network');
+      }
+      throw new BackendError('Unknown network error', 0, 'network');
     }
   }
 
@@ -162,15 +210,25 @@ export class ApiClient {
 
   // Search endpoints
   async searchConversations(query: string, limit: number = 20): Promise<SearchResponse> {
-    return this.request<SearchResponse>(`/search?query=${encodeURIComponent(query)}&limit=${limit}`, {
+    return this.request<SearchResponse>(`/search`, {
       method: 'POST',
+      body: JSON.stringify({ query, limit }),
     });
+  }
+
+  async discoverConversations(limit: number = 20): Promise<DiscoverResponse> {
+    return this.request<DiscoverResponse>(`/discover?limit=${limit}`);
   }
 
   async getSimilarConversations(conversationId: string, limit: number = 20): Promise<SimilarConversationsResponse> {
     return this.request<SimilarConversationsResponse>(`/conversations/${conversationId}/similar?limit=${limit}`, {
       method: 'GET',
     });
+  }
+
+  // User profile endpoints
+  async getUserProfile(username: string) {
+    return this.request<User & { recent_conversations: any[] }>(`/users/profile/${username}`);
   }
 
   // WebSocket URL helper

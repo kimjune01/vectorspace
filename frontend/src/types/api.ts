@@ -1,6 +1,7 @@
 // API Response Types - Prevents data structure mismatches
 
-export interface PaginatedResponse<T> {
+export interface PaginatedResponse<T = any> {
+  data: T;
   total: number;
   page: number;
   per_page: number;
@@ -40,18 +41,22 @@ export interface Message {
 }
 
 export interface ConversationDetail extends Conversation {
+  author_username: string;
+  author_display_name: string;
   messages: Message[];
   participant_count: number;
 }
 
 export interface SearchResult {
-  id: string;
-  content: string;
-  createdAt: string;
-  sessionId: string;
-  session: {
-    id: string;
-    title: string;
+  id: number;
+  title: string;
+  summary: string;
+  created_at: string;
+  view_count: number;
+  similarity_score?: number;
+  author: {
+    username: string;
+    display_name: string;
   };
 }
 
@@ -67,6 +72,11 @@ export interface SearchResponse {
   query: string;
 }
 
+export interface DiscoverResponse {
+  conversations: SearchResult[];
+  total_found: number;
+}
+
 export interface User {
   id: number;
   username: string;
@@ -77,7 +87,7 @@ export interface User {
   created_at: string;
   conversation_count: number;
   conversations_last_24h: number;
-  stripe_pattern_seed: string;
+  stripe_pattern_seed: number;
 }
 
 export interface AuthResponse {
@@ -148,4 +158,4 @@ export interface SimilarConversationsResponse {
 }
 
 // Utility type for API endpoints that might return either single items or arrays
-export type ApiResponse<T> = T extends any[] ? T : T;
+export type ApiResponse<T> = T;

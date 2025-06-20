@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlusCircleIcon, MessageSquareIcon, Loader2, AlertTriangleIcon, SearchIcon, XIcon } from 'lucide-react';
+import { PlusCircleIcon, MessageSquareIcon, Loader2, SearchIcon, XIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion'; // Import Framer Motion
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import type { ConversationsResponse, SearchResponse } from '@/types/api';
+import type { ConversationsResponse, SearchResponse, SearchResult } from '@/types/api';
 import { EnhancedError } from '@/components/debug/EnhancedError';
 import ChatSessionItem from './ChatSessionItem';
 
@@ -19,24 +19,12 @@ interface ChatSession {
   originalConversation?: any; // Store the full conversation object
 }
 
-// For search results
-interface SearchResultMessage {
-  id: string;
-  content: string;
-  createdAt: string;
-  sessionId: string;
-  session: { // Assuming session object is nested as defined in search API
-    id: string;
-    title: string;
-  };
-}
 
 interface ChatSidebarProps {
   onSessionSelect: (sessionId: string) => void;
   onNewChat: () => void;
   currentSessionId: string | null;
   onSearchResultSelect: (messageId: string, sessionId: string) => void;
-  onConversationSelect?: (conversation: any) => void;
 }
 
 const HighlightMatch: React.FC<{ text: string; query: string }> = ({ text, query }) => {
@@ -65,14 +53,14 @@ const SkeletonSidebarItem = () => (
   </div>
 );
 
-export default function ChatSidebar({ onSessionSelect, onNewChat, currentSessionId, onSearchResultSelect, onConversationSelect }: ChatSidebarProps) {
+export default function ChatSidebar({ onSessionSelect, onNewChat, currentSessionId, onSearchResultSelect }: ChatSidebarProps) {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResultMessage[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false); // To know if a search has been performed
@@ -165,6 +153,22 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
     return text;
   };
 
+  const formatDisplayDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date >= today) {
+      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } else if (date >= yesterday) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
   const renderContent = () => {
     if (hasSearched) {
       // Display search results
@@ -206,25 +210,25 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-1">
           <AnimatePresence>
-            {searchResults.map((msg, index) => (
+            {searchResults.map((result, index) => (
               <motion.div
-                key={msg.id}
+                key={result.id}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: index * 0.05 } }}
-                exit={{ opacity: 0, x: -20 }} // Slide out on clear/new search
-                layout // Animate layout changes
+                exit={{ opacity: 0, x: -20 }}
+                layout
               >
                 <Button
                   variant="ghost"
                   className="w-full h-auto py-2.5 px-3 text-left flex flex-col items-start group"
-                  onClick={() => onSearchResultSelect(msg.id, msg.session.id)}
+                  onClick={() => onSearchResultSelect(result.id.toString(), result.id.toString())}
                 >
                   <div className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 w-full flex justify-between items-center mb-0.5">
-                    <span className="truncate max-w-[70%]">In: {truncateText(msg.session.title, 20)}</span>
-                    <span>{formatDisplayDate(msg.createdAt)}</span>
+                    <span className="truncate max-w-[70%]">By: {truncateText(result.author.display_name || result.author.username, 20)}</span>
+                    <span>{formatDisplayDate(result.created_at)}</span>
                   </div>
                   <p className="text-sm text-foreground group-hover:text-foreground leading-snug line-clamp-2">
-                    <HighlightMatch text={truncateText(msg.content, 120)} query={searchQuery} />
+                    <HighlightMatch text={truncateText(result.title, 120)} query={searchQuery} />
                   </p>
                 </Button>
               </motion.div>

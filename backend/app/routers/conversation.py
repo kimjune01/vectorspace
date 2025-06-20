@@ -53,9 +53,11 @@ async def get_conversation(
     db: AsyncSession = Depends(get_db)
 ):
     """Get conversation details with messages and participants."""
-    # Get conversation
+    # Get conversation with author information
     conversation_result = await db.execute(
-        select(Conversation).where(Conversation.id == conversation_id)
+        select(Conversation)
+        .options(selectinload(Conversation.user))
+        .where(Conversation.id == conversation_id)
     )
     conversation = conversation_result.scalar_one_or_none()
     
@@ -116,6 +118,8 @@ async def get_conversation(
         "id": conversation.id,
         "title": conversation.title,
         "user_id": conversation.user_id,
+        "author_username": conversation.user.username,
+        "author_display_name": conversation.user.display_name,
         "is_public": conversation.is_public,
         "is_hidden_from_profile": conversation.is_hidden_from_profile,
         "created_at": conversation.created_at,

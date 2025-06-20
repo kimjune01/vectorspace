@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MessageSquare, Send, User, Menu, LogOut, Loader2, AlertTriangle, Settings, Search, UserIcon } from 'lucide-react';
+import { MessageSquare, Send, User, Menu, LogOut, Loader2, AlertTriangle, Settings, Search, UserIcon, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
@@ -32,7 +32,6 @@ interface Message {
 }
 
 export default function HomePage() {
-  const navigate = useNavigate();
   const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -102,7 +101,7 @@ export default function HomePage() {
       );
       
       setCurrentConversation(conversation);
-      await sendMessage(conversation.id);
+      await sendMessage(conversation.id.toString());
     } catch (error) {
       console.error('Failed to start conversation:', error);
       setError('Failed to start new conversation');
@@ -345,58 +344,108 @@ export default function HomePage() {
             />
           </div>
           <div className="flex items-center space-x-3">
-            <p className="text-xs sm:text-sm text-muted-foreground hidden md:block">
-              Welcome, {user?.username}!
-            </p>
-            
-            {/* Settings Dropdown Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="hover:bg-foreground/10 transition-colors"
-                    title="Settings & More"
-                  >
-                    <Settings className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-                  </Button>
-                </motion.div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <div className="flex items-center gap-2">
-                    <UserIcon className="h-4 w-4" />
-                    {user?.username}
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                
-                <DropdownMenuItem asChild>
-                  <Link to="/discover" className="flex items-center cursor-pointer">
-                    <Search className="mr-2 h-4 w-4" />
-                    Discover Conversations
-                  </Link>
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem asChild>
-                  <Link to={`/profile/${user?.username}`} className="flex items-center cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    My Profile
-                  </Link>
-                </DropdownMenuItem>
-                
-                <DropdownMenuSeparator />
-                
-                <DropdownMenuItem 
-                  onClick={() => logout()}
-                  className="cursor-pointer text-destructive focus:text-destructive"
+            {isAuthenticated ? (
+              <>
+                <Link 
+                  to={`/profile/${user?.username}`}
+                  className="text-xs sm:text-sm text-muted-foreground hidden md:block hover:text-foreground transition-colors"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {user?.display_name || user?.username}
+                </Link>
+                
+                {/* Settings Dropdown Menu - Authenticated */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-foreground/10 transition-colors"
+                        title="Settings & More"
+                      >
+                        <Settings className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+                      </Button>
+                    </motion.div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="h-4 w-4" />
+                        {user?.username}
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem asChild>
+                      <Link to="/discover" className="flex items-center cursor-pointer">
+                        <Search className="mr-2 h-4 w-4" />
+                        Discover Conversations
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link to={`/profile/${user?.username}`} className="flex items-center cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem 
+                      onClick={() => logout()}
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              /* Settings Dropdown Menu - Unauthenticated */
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="hover:bg-foreground/10 transition-colors"
+                      title="Options"
+                    >
+                      <Settings className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+                    </Button>
+                  </motion.div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>VectorSpace</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem asChild>
+                    <Link to="/discover" className="flex items-center cursor-pointer">
+                      <Search className="mr-2 h-4 w-4" />
+                      Discover Conversations
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem asChild>
+                    <Link to="/login" className="flex items-center cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign In
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem asChild>
+                    <Link to="/register" className="flex items-center cursor-pointer">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Sign Up
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </motion.header>
 

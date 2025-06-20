@@ -7,24 +7,31 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, Calendar, ArrowLeft, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiClient } from '@/lib/api';
+import { useApiWithErrorHandling } from '@/contexts/ErrorContext';
 
 interface UserProfile {
-  id: string;
   username: string;
-  email: string;
-  created_at: string;
-  profile_image?: string;
+  display_name: string;
+  bio?: string;
+  profile_image_url?: string;
+  profile_image_data?: string;
+  stripe_pattern_seed: number;
   conversation_count: number;
-  public_conversation_count: number;
+  conversations_last_24h: number;
+  created_at: string;
+  recent_conversations: Conversation[];
 }
 
 interface Conversation {
-  id: string;
+  id: number;
   title: string;
   summary?: string;
   created_at: string;
-  message_count: number;
-  is_public: boolean;
+  view_count: number;
+  is_archived: boolean;
+  is_public?: boolean;
+  is_hidden_from_profile?: boolean;
 }
 
 export default function ProfilePage() {
@@ -35,6 +42,7 @@ export default function ProfilePage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const { handleApiCall } = useApiWithErrorHandling();
 
   const isOwnProfile = currentUser && currentUser.username === username;
 
@@ -45,30 +53,28 @@ export default function ProfilePage() {
   }, [username]);
 
   const fetchProfile = async () => {
-    try {
-      setIsLoading(true);
-      // Note: This endpoint would need to be implemented in the backend
-      // const profileData = await apiClient.getUserProfile(username);
-      // const userConversations = await apiClient.getUserConversations(username);
-      
-      // Mock data for now
-      const mockProfile: UserProfile = {
-        id: '1',
-        username: username || 'user',
-        email: 'user@example.com',
-        created_at: new Date().toISOString(),
-        conversation_count: 5,
-        public_conversation_count: 3,
-      };
-      
-      setProfile(mockProfile);
-      setConversations([]);
-    } catch (error) {
-      setError('Failed to load profile');
-      console.error('Error fetching profile:', error);
-    } finally {
+    setIsLoading(true);
+    if (!username) {
+      setError('Username is required');
       setIsLoading(false);
+      return;
     }
+    
+    const profileData = await handleApiCall(
+      () => apiClient.getUserProfile(username),
+      fetchProfile // Retry callback
+    );
+    
+    if (profileData) {
+      setProfile(profileData);
+      setConversations(profileData.recent_conversations || []);
+      setError(''); // Clear any previous errors
+    } else {
+      // handleApiCall returns null on BackendError (handled by dialog)
+      // Only set error for non-backend errors or when dialog is dismissed
+      setError('Failed to load profile');
+    }
+    setIsLoading(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -85,6 +91,16 @@ export default function ProfilePage() {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+  
+  const getProfileImage = () => {
+    if (profile?.profile_image_data) {
+      return profile.profile_image_data;
+    }
+    if (profile?.profile_image_url) {
+      return profile.profile_image_url;
+    }
+    return undefined;
   };
 
   if (isLoading) {
@@ -133,14 +149,14 @@ export default function ProfilePage() {
           <CardContent className="p-6">
             <div className="flex items-start gap-6">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={profile.profile_image} />
+                <AvatarImage src={getProfileImage()} />
                 <AvatarFallback className="text-lg">
-                  {getInitials(profile.username)}
+                  {getInitials(profile.display_name || profile.username)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-2xl font-bold">@{profile.username}</h2>
+                  <h2 className="text-2xl font-bold">{profile.display_name}</h2>
                   {isOwnProfile && (
                     <Button variant="outline" size="sm">
                       <Settings className="h-4 w-4 mr-2" />
@@ -154,14 +170,17 @@ export default function ProfilePage() {
                     <span>Joined {formatDate(profile.created_at)}</span>
                   </div>
                 </div>
+                {profile.bio && (
+                  <p className="text-muted-foreground mb-4">{profile.bio}</p>
+                )}
                 <div className="flex gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold">{profile.conversation_count}</div>
                     <div className="text-sm text-muted-foreground">Total Conversations</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold">{profile.public_conversation_count}</div>
-                    <div className="text-sm text-muted-foreground">Public Conversations</div>
+                    <div className="text-2xl font-bold">{profile.conversations_last_24h}</div>
+                    <div className="text-sm text-muted-foreground">Last 24 Hours</div>
                   </div>
                 </div>
               </div>
@@ -178,9 +197,9 @@ export default function ProfilePage() {
           
           <TabsContent value="public" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {conversations.filter(conv => conv.is_public).length > 0 ? (
+              {conversations.filter(conv => conv.is_public !== false).length > 0 ? (
                 conversations
-                  .filter(conv => conv.is_public)
+                  .filter(conv => conv.is_public !== false)
                   .map((conversation) => (
                     <Card 
                       key={conversation.id} 
@@ -193,7 +212,7 @@ export default function ProfilePage() {
                           <span>{formatDate(conversation.created_at)}</span>
                           <Badge variant="secondary" className="text-xs">
                             <MessageSquare className="h-3 w-3 mr-1" />
-                            {conversation.message_count} messages
+                            {conversation.view_count} views
                           </Badge>
                         </div>
                       </CardHeader>
@@ -224,9 +243,9 @@ export default function ProfilePage() {
           {isOwnProfile && (
             <TabsContent value="private" className="mt-6">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {conversations.filter(conv => !conv.is_public).length > 0 ? (
+                {conversations.filter(conv => conv.is_public === false).length > 0 ? (
                   conversations
-                    .filter(conv => !conv.is_public)
+                    .filter(conv => conv.is_public === false)
                     .map((conversation) => (
                       <Card 
                         key={conversation.id} 
@@ -239,7 +258,7 @@ export default function ProfilePage() {
                             <span>{formatDate(conversation.created_at)}</span>
                             <Badge variant="secondary" className="text-xs">
                               <MessageSquare className="h-3 w-3 mr-1" />
-                              {conversation.message_count} messages
+                              {conversation.view_count} views
                             </Badge>
                           </div>
                         </CardHeader>

@@ -8,6 +8,7 @@ import { PlusCircle, MessageSquare, Clock, User, Eye, AlertTriangle } from 'luci
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/lib/api';
 import type { Conversation } from '@/types';
+import type { SearchResult } from '@/types/api';
 
 interface SimilarConversationsSidebarProps {
   currentConversation: Conversation | null;
@@ -15,25 +16,12 @@ interface SimilarConversationsSidebarProps {
   onNewChat: () => void;
 }
 
-interface SimilarConversation {
-  id: number;
-  title: string;
-  summary: string;
-  created_at: string;
-  view_count: number;
-  similarity_score: number;
-  author: {
-    username: string;
-    display_name: string;
-  };
-}
-
 export default function SimilarConversationsSidebar({
   currentConversation,
   onConversationSelect,
   onNewChat
 }: SimilarConversationsSidebarProps) {
-  const [similarConversations, setSimilarConversations] = useState<SimilarConversation[]>([]);
+  const [similarConversations, setSimilarConversations] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
@@ -53,8 +41,20 @@ export default function SimilarConversationsSidebar({
       setError(undefined);
       
       const data = await apiClient.getSimilarConversations(currentConversation.id.toString(), 20);
-      // The API returns conversations already sorted by similarity score
-      setSimilarConversations(data.conversations || []);
+      // Transform Conversation[] to SearchResult[] format
+      const searchResults: SearchResult[] = data.conversations.map(conv => ({
+        id: conv.id,
+        title: conv.title,
+        summary: conv.summary_public || '',
+        created_at: conv.created_at,
+        view_count: conv.view_count,
+        similarity_score: 0.8, // Default similarity since it's not in Conversation type
+        author: {
+          username: 'user',
+          display_name: 'User'
+        }
+      }));
+      setSimilarConversations(searchResults);
     } catch (error) {
       console.error('Error fetching similar conversations:', error);
       setError('Failed to load similar conversations');
@@ -63,7 +63,7 @@ export default function SimilarConversationsSidebar({
     }
   };
 
-  const handleConversationClick = (similarConv: SimilarConversation) => {
+  const handleConversationClick = (similarConv: SearchResult) => {
     // Convert SimilarConversation to Conversation type
     const conversation: Conversation = {
       id: similarConv.id,
@@ -206,7 +206,7 @@ export default function SimilarConversationsSidebar({
                       variant="secondary" 
                       className="ml-2 text-xs"
                     >
-                      {Math.round(conv.similarity_score * 100)}%
+                      {Math.round((conv.similarity_score || 0) * 100)}%
                     </Badge>
                   </div>
                   

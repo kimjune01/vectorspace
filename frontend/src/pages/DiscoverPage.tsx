@@ -7,29 +7,31 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Filter, Clock, MessageSquare, User, ArrowLeft } from 'lucide-react';
 import { apiClient } from '@/lib/api';
-import type { Conversation } from '@/types';
+import { useApiWithErrorHandling } from '@/contexts/ErrorContext';
+import type { SearchResult } from '@/types/api';
 
 export default function DiscoverPage() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<SearchResult[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recent');
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const { handleApiCall } = useApiWithErrorHandling();
 
   useEffect(() => {
     fetchConversations();
   }, []);
 
   const fetchConversations = async () => {
-    try {
-      setIsLoading(true);
-      const data = await apiClient.getConversations();
-      setConversations(data.filter((conv: Conversation) => conv.is_public));
-    } catch (error) {
-      console.error('Failed to fetch conversations:', error);
-    } finally {
-      setIsLoading(false);
+    setIsLoading(true);
+    const response = await handleApiCall(
+      () => apiClient.discoverConversations(),
+      fetchConversations // Retry callback
+    );
+    if (response) {
+      setConversations(response.conversations);
     }
+    setIsLoading(false);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -39,18 +41,16 @@ export default function DiscoverPage() {
       return;
     }
 
-    try {
-      setIsSearching(true);
-      const response = await apiClient.searchConversations(searchQuery);
-      // API returns {conversations: [...], pagination: {...}}
+    setIsSearching(true);
+    const response = await handleApiCall(
+      () => apiClient.searchConversations(searchQuery),
+      () => handleSearch(e) // Retry callback
+    );
+    if (response) {
       const results = response.conversations || [];
-      // Search results are already filtered to public conversations by the API
       setConversations(results);
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setIsSearching(false);
     }
+    setIsSearching(false);
   };
 
   const sortedConversations = [...conversations].sort((a, b) => {
@@ -162,7 +162,13 @@ export default function DiscoverPage() {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <User className="h-3 w-3" />
-                    <span>User {conversation.user_id}</span>
+                    <Link 
+                      to={`/profile/${conversation.author.username}`} 
+                      className="hover:text-foreground hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {conversation.author.display_name}
+                    </Link>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
@@ -176,10 +182,10 @@ export default function DiscoverPage() {
                   </Badge>
                 </div>
               </CardHeader>
-              {conversation.summary_public && (
+              {conversation.summary && (
                 <CardContent className="pt-0">
                   <p className="text-sm text-muted-foreground line-clamp-3">
-                    {conversation.summary_public}
+                    {conversation.summary}
                   </p>
                 </CardContent>
               )}

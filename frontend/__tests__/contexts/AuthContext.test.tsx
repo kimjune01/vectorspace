@@ -48,7 +48,20 @@ const TestComponent = () => {
 describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    localStorage.clear()
+    
+    // Create a proper localStorage mock that actually stores values
+    const storage: Record<string, string> = {}
+    const mockLocalStorage = {
+      getItem: vi.fn((key: string) => storage[key] || null),
+      setItem: vi.fn((key: string, value: string) => { storage[key] = value }),
+      removeItem: vi.fn((key: string) => { delete storage[key] }),
+      clear: vi.fn(() => { Object.keys(storage).forEach(key => delete storage[key]) }),
+    }
+    
+    Object.defineProperty(window, 'localStorage', {
+      value: mockLocalStorage,
+      writable: true
+    })
   })
 
   test('provides initial state with no user', async () => {
@@ -73,11 +86,13 @@ describe('AuthContext', () => {
     // Set localStorage after mocks are ready
     localStorage.setItem('auth_token', 'mock-token')
     
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    )
+    await act(async () => {
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      )
+    })
 
     // Wait for the async initialization to complete
     await waitFor(() => {
@@ -187,11 +202,13 @@ describe('AuthContext', () => {
     // Start with logged in user
     localStorage.setItem('auth_token', 'mock-token')
 
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    )
+    await act(async () => {
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      )
+    })
 
     // Wait for loading to complete first
     await waitFor(() => {

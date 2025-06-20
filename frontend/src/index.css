@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import highlight.js theme for code syntax highlighting */
-@import 'highlight.js/styles/github.css';
-
 body {
   font-family: Arial, Helvetica, sans-serif;
 }

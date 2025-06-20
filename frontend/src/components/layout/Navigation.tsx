@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Button } from '../ui/button'
+import { Badge } from '../ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
@@ -76,22 +76,20 @@ export default function Navigation() {
           {/* User Menu / Auth */}
           <div className="flex items-center space-x-2">
             {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center space-x-1">
+              <div className="flex items-center space-x-2">
+                <Link to={`/profile/${user?.username}`}>
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-1 hover:bg-accent">
                     <User className="h-4 w-4" />
-                    <span>{user?.username || 'Account'}</span>
+                    <span>{user?.display_name || user?.username || 'Account'}</span>
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to={`/profile/${user?.username}`} className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="px-2">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-32">
                   <DropdownMenuItem asChild>
                     <Link to="/settings" className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
@@ -105,6 +103,7 @@ export default function Navigation() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </div>
             ) : (
               <div className="flex items-center space-x-2">
                 <Link to="/login">

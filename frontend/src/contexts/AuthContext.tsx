@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { apiClient } from '@/lib/api';
+import { apiClient, BackendError } from '@/lib/api';
 import type { User } from '@/types';
 
 interface AuthContextType {
@@ -12,7 +12,7 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -20,14 +20,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (username: string, password: string) => {
     console.log('AuthContext: Attempting login for user:', username);
-    const response = await apiClient.login(username, password);
-    console.log('AuthContext: Login successful, setting user:', response.user);
-    setUser(response.user);
+    try {
+      const response = await apiClient.login(username, password);
+      console.log('AuthContext: Login successful, setting user:', response.user);
+      setUser(response.user);
+    } catch (error) {
+      if (error instanceof BackendError) {
+        // For authentication errors (401, 403), convert to regular error
+        if (error.statusCode === 401 || error.statusCode === 403) {
+          throw new Error('Invalid username or password');
+        }
+        // For other client errors (400-499), convert to regular error  
+        if (error.statusCode >= 400 && error.statusCode < 500) {
+          throw new Error(error.message || 'Authentication failed');
+        }
+        // For server errors (5xx) and network issues, let BackendError bubble up
+        // This will trigger the global error dialog
+      }
+      // Re-throw the error (either BackendError for connectivity issues, or converted Error for auth issues)
+      throw error;
+    }
   };
 
   const register = async (username: string, display_name: string, email: string, password: string, bio?: string) => {
-    const response = await apiClient.register(username, display_name, email, password, bio);
-    setUser(response.user);
+    try {
+      const response = await apiClient.register(username, display_name, email, password, bio);
+      setUser(response.user);
+    } catch (error) {
+      if (error instanceof BackendError) {
+        // For registration errors (400, 409 conflict, etc.), convert to regular error
+        if (error.statusCode >= 400 && error.statusCode < 500) {
+          throw new Error(error.message || 'Registration failed');
+        }
+        // For server errors (5xx) and network issues, let BackendError bubble up
+      }
+      throw error;
+    }
   };
 
   const logout = async () => {
@@ -84,6 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Auto-login successful');
         setUser(response.user);
       } catch (error) {
+        // Silently fail auto-login - don't show error dialogs for this
         console.error('Auto-login failed:', error);
       }
     };

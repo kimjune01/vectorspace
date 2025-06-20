@@ -114,7 +114,6 @@ export default function EnhancedSidebar({
                 onNewChat={onNewChat}
                 currentSessionId={currentSessionId}
                 onSearchResultSelect={onSearchResultSelect}
-                onConversationSelect={onConversationSelect}
               />
             </motion.div>
           </TabsContent>

@@ -13,18 +13,24 @@ import type { Message } from '@/types';
 
 interface ChatInterfaceProps {
   conversationId: string;
+  initialMessages?: Message[];
   onNewMessage?: (message: Message) => void;
   onTitleUpdate?: (newTitle: string) => void;
 }
 
-export function ChatInterface({ conversationId, onNewMessage, onTitleUpdate }: ChatInterfaceProps) {
+export function ChatInterface({ conversationId, initialMessages = [], onNewMessage, onTitleUpdate }: ChatInterfaceProps) {
   const { isAuthenticated } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const wsUrl = conversationId && isAuthenticated ? apiClient.getWebSocketUrl(conversationId) : null;
+
+  // Update messages when initialMessages prop changes
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages]);
 
   const { isConnected, connectionStatus, sendMessage } = useWebSocket(wsUrl, {
     onMessage: (message: WebSocketMessage) => {

@@ -9,12 +9,12 @@ import { ChatInterface } from '@/components/chat/ChatInterface';
 import { ArrowLeft, Settings, Archive, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
-import type { ConversationDetail } from '@/types';
+import type { ConversationDetail } from '@/types/api';
 
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [conversation, setConversation] = useState<ConversationDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -121,9 +121,14 @@ export default function ChatPage() {
       <div className="bg-background/60 backdrop-blur-xl border-b border-border/40 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate(`/profile/${conversation?.author_username}`)} 
+              className="flex items-center gap-2"
+            >
               <ArrowLeft className="h-4 w-4" />
-              Back to Chat
+              Back to Profile
             </Button>
           </div>
         </div>
@@ -198,6 +203,7 @@ export default function ChatPage() {
         <Card className="h-[600px]">
           <ChatInterface 
             conversationId={conversation.id.toString()}
+            initialMessages={conversation.messages || []}
             onNewMessage={() => {
               // Message count will be updated by WebSocket, no need to refetch
             }}

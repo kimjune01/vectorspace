@@ -8,7 +8,7 @@
  * - Basic UI interactions
  */
 
-const { describe, test, expect, beforeAll, afterAll, beforeEach } = require('@jest/globals');
+const { describe, test, expect, beforeAll, afterAll, beforeEach } = require('vitest');
 
 // Mock Puppeteer functions since we'll use the MCP server
 const puppeteer = {

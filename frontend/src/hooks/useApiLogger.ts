@@ -16,7 +16,7 @@ interface LoggedRequest {
 }
 
 export const useApiLogger = () => {
-  const originalFetch = useRef<typeof fetch>();
+  const originalFetch = useRef<typeof fetch | undefined>(undefined);
   const requestLog = useRef<LoggedRequest[]>([]);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export const useApiLogger = () => {
 
       const logEntry: LoggedRequest = {
         id: requestId,
-        url: typeof url === 'string' ? url : url.toString(),
+        url: typeof url === 'string' ? url : (url as URL).toString(),
         method,
         startTime,
         requestHeaders: options.headers ? 

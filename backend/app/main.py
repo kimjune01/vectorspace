@@ -18,7 +18,10 @@ app = FastAPI(title="VectorSpace API", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure properly for production
+    allow_origins=[
+        "http://localhost:5173",  # Development
+        "https://bountiful-wholeness-production-eedc.up.railway.app",  # Production frontend
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

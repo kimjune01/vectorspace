@@ -60,10 +60,20 @@ curl http://localhost:8000/health
 
 ## Environment Variables
 
-Set these in Railway dashboard:
-- `ENVIRONMENT=production`
-- `DATABASE_URL` (if using external DB)
-- `OPENAI_API_KEY` (if using real AI service)
+### Required in Railway Dashboard:
+- `DATABASE_URL` - PostgreSQL connection string (automatically provided by Railway when you add the postgres service)
+- `OPENAI_API_KEY` - Your OpenAI API key for embeddings
+
+### Optional:
+- `ENVIRONMENT=production` (automatically set in railway.toml)
+- `LOG_LEVEL=INFO` (automatically set in railway.toml)
+- `JWT_SECRET_KEY` - Custom JWT secret (auto-generated if not provided)
+
+### Database Setup:
+The backend automatically detects PostgreSQL vs SQLite and configures appropriately:
+- **PostgreSQL**: Uses connection pooling, auto-reconnection, optimized for production
+- **SQLite**: Uses simple connection for local development
+- **Migration**: Runs `migrate.py` before starting the app to ensure tables exist
 
 ## Optimization Features
 

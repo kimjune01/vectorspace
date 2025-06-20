@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.routers import auth, conversation, websocket, search, admin, users
-from app.database import Base, engine
+from app.database import Base, engine, init_database, check_database_connection
 from app.services.presence_manager import start_presence_cleanup_task
 from app.services.websocket_manager import websocket_manager
 from app.services.heartbeat_manager import get_heartbeat_manager
@@ -38,14 +38,31 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    # Check database connection
+    db_healthy = await check_database_connection()
+    
+    health_status = {
+        "status": "healthy" if db_healthy else "unhealthy",
+        "database": "connected" if db_healthy else "disconnected",
+        "services": {
+            "api": "running",
+            "websocket": "running",
+            "database": "connected" if db_healthy else "disconnected"
+        }
+    }
+    
+    return health_status
 
-# Create tables on startup (for development)
+# Initialize database and services on startup
 @app.on_event("startup")
 async def startup_event():
-    # Create database tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Check database connection
+    if not await check_database_connection():
+        print("❌ Database connection failed - check DATABASE_URL")
+        return
+    
+    # Initialize database tables
+    await init_database()
     
     # Start presence cleanup task
     asyncio.create_task(start_presence_cleanup_task())

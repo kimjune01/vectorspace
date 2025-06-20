@@ -21,6 +21,7 @@ describe('NeighboringChatsPolling', () => {
   });
 
   afterEach(() => {
+    vi.runOnlyPendingTimers();
     vi.useRealTimers();
   });
 
@@ -47,34 +48,24 @@ describe('NeighboringChatsPolling', () => {
         })
       });
 
-      render(<NeighboringChatsPanel {...mockProps} />);
+      const { unmount } = render(<NeighboringChatsPanel {...mockProps} />);
 
-      // Wait for initial fetch using fake timers
-      await act(async () => {
-        vi.advanceTimersByTime(100); // Allow initial effect to run
-        await vi.runAllTimersAsync(); // Run any pending timers
-      });
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      // Wait for initial fetch
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
 
       // Fast-forward 14 seconds - should not poll yet
-      act(() => {
-        vi.advanceTimersByTime(14000);
-      });
+      vi.advanceTimersByTime(14000);
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
       // Fast-forward to 15 seconds - should poll now
-      await act(async () => {
-        vi.advanceTimersByTime(1000);
-        await vi.runAllTimersAsync();
-      });
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      vi.advanceTimersByTime(1000);
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
 
       // Fast-forward another 15 seconds - should poll again
-      await act(async () => {
-        vi.advanceTimersByTime(15000);
-        await vi.runAllTimersAsync();
-      });
-      expect(mockFetch).toHaveBeenCalledTimes(3);
+      vi.advanceTimersByTime(15000);
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(3));
+
+      unmount();
     });
 
     it('should stop polling when conversation ID changes', async () => {
@@ -83,20 +74,16 @@ describe('NeighboringChatsPolling', () => {
         json: () => Promise.resolve({ conversations: [] })
       });
 
-      const { rerender } = render(<NeighboringChatsPanel {...mockProps} />);
+      const { rerender, unmount } = render(<NeighboringChatsPanel {...mockProps} />);
 
       // Wait for initial fetch
-      await act(async () => {
-        vi.advanceTimersByTime(100);
-      });
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
 
       // Change conversation ID
-      await act(async () => {
-        rerender(<NeighboringChatsPanel {...mockProps} conversationId={999} />);
-      });
+      rerender(<NeighboringChatsPanel {...mockProps} conversationId={999} />);
 
       // Should fetch for new conversation
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/conversations/999/similar?limit=20',
         expect.objectContaining({
@@ -105,13 +92,14 @@ describe('NeighboringChatsPolling', () => {
       );
 
       // Fast-forward 15 seconds
-      await act(async () => {
-        vi.advanceTimersByTime(15000);
-      });
+      vi.advanceTimersByTime(15000);
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(3));
 
       // Should only poll for the new conversation (999), not the old one (123)
       const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
       expect(lastCall[0]).toContain('/api/conversations/999/similar');
+
+      unmount();
     });
 
     it('should stop polling when component unmounts', async () => {
@@ -123,18 +111,13 @@ describe('NeighboringChatsPolling', () => {
       const { unmount } = render(<NeighboringChatsPanel {...mockProps} />);
 
       // Wait for initial fetch
-      await act(async () => {
-        vi.advanceTimersByTime(100);
-      });
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
 
       // Unmount component
       unmount();
 
       // Fast-forward 15 seconds - should not poll anymore
-      act(() => {
-        vi.advanceTimersByTime(15000);
-      });
+      vi.advanceTimersByTime(15000);
       expect(mockFetch).toHaveBeenCalledTimes(1); // Only initial fetch
     });
 
@@ -147,19 +130,16 @@ describe('NeighboringChatsPolling', () => {
           json: () => Promise.resolve({ conversations: [] })
         });
 
-      render(<NeighboringChatsPanel {...mockProps} />);
+      const { unmount } = render(<NeighboringChatsPanel {...mockProps} />);
 
       // Wait for initial fetch to complete
-      await act(async () => {
-        vi.advanceTimersByTime(100);
-      });
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
 
       // Fast-forward 15 seconds - should retry
-      await act(async () => {
-        vi.advanceTimersByTime(15000);
-      });
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      vi.advanceTimersByTime(15000);
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
+
+      unmount();
     });
 
     it('should display newly found neighboring conversations after polling', async () => {
@@ -169,16 +149,12 @@ describe('NeighboringChatsPolling', () => {
         json: () => Promise.resolve({ conversations: [] })
       });
 
-      render(<NeighboringChatsPanel {...mockProps} />);
+      const { unmount } = render(<NeighboringChatsPanel {...mockProps} />);
 
-      // Wait for initial load to complete
-      await act(async () => {
-        vi.advanceTimersByTime(100);
-        await vi.runAllTimersAsync();
+      // Wait for initial load to complete and check the empty state
+      await waitFor(() => {
+        expect(screen.getByText(/no similar conversations found/i)).toBeInTheDocument();
       });
-
-      // Check initial state
-      expect(screen.getByText(/no similar conversations found/i)).toBeInTheDocument();
 
       // Mock new similar conversation appearing after 15 seconds
       mockFetch.mockResolvedValueOnce({
@@ -197,13 +173,15 @@ describe('NeighboringChatsPolling', () => {
       });
 
       // Fast-forward 15 seconds to trigger polling
-      await act(async () => {
-        vi.advanceTimersByTime(15000);
-        await vi.runAllTimersAsync();
-      });
+      vi.advanceTimersByTime(15000);
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
 
       // Should display the new conversation
-      expect(screen.getByText('Newly similar conversation')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Newly similar conversation')).toBeInTheDocument();
+      }, { timeout: 10000 });
+
+      unmount();
     });
   });
 });

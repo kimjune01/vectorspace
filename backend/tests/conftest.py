@@ -102,3 +102,79 @@ def override_get_db(db_session):
     app.dependency_overrides[get_db] = _get_test_db
     yield
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def test_user(db_session):
+    """Create a test user."""
+    from app.models import User
+    user = User(
+        username="testuser",
+        display_name="Test User",
+        email="test@example.com",
+        password_hash="hashed_password",
+        bio="Test user bio"
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def test_users(db_session):
+    """Create multiple test users."""
+    from app.models import User
+    users = []
+    for i in range(5):
+        user = User(
+            username=f"testuser{i}",
+            display_name=f"Test User {i}",
+            email=f"test{i}@example.com",
+            password_hash="hashed_password",
+            bio=f"Test user {i} bio"
+        )
+        db_session.add(user)
+        users.append(user)
+    
+    await db_session.commit()
+    for user in users:
+        await db_session.refresh(user)
+    return users
+
+
+@pytest_asyncio.fixture
+async def test_conversation(db_session, test_user):
+    """Create a test conversation."""
+    from app.models import Conversation
+    conversation = Conversation(
+        user_id=test_user.id,
+        title="Test Conversation",
+        summary_public="A test conversation about testing",
+        is_public=True
+    )
+    db_session.add(conversation)
+    await db_session.commit()
+    await db_session.refresh(conversation)
+    return conversation
+
+
+@pytest_asyncio.fixture
+async def test_conversations(db_session, test_user):
+    """Create multiple test conversations."""
+    from app.models import Conversation
+    conversations = []
+    for i in range(5):
+        conversation = Conversation(
+            user_id=test_user.id,
+            title=f"Test Conversation {i}",
+            summary_public=f"A test conversation about topic {i}",
+            is_public=True
+        )
+        db_session.add(conversation)
+        conversations.append(conversation)
+    
+    await db_session.commit()
+    for conversation in conversations:
+        await db_session.refresh(conversation)
+    return conversations

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
@@ -250,3 +250,191 @@ class ConversationParticipant(Base):
     def is_visitor(self) -> bool:
         """Check if participant is a visitor."""
         return self.role == "visitor"
+
+
+# ========================================
+# SOCIAL FEATURES MODELS
+# ========================================
+
+class Follow(Base):
+    """Follow relationships between users."""
+    __tablename__ = "follows"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    follower_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    following_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    follower = relationship("User", foreign_keys=[follower_id])
+    following = relationship("User", foreign_keys=[following_id])
+    
+    # Constraints
+    __table_args__ = (
+        UniqueConstraint('follower_id', 'following_id', name='_unique_follow'),
+    )
+    
+    def __repr__(self):
+        return f"<Follow(follower_id={self.follower_id}, following_id={self.following_id})>"
+
+
+class SavedConversation(Base):
+    """User's saved/bookmarked conversations."""
+    __tablename__ = "saved_conversations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
+    saved_at = Column(DateTime(timezone=True), server_default=func.now())
+    tags = Column(JSON, default=list)  # List of tag strings
+    personal_note = Column(Text, nullable=True)  # Optional personal note
+    
+    # Relationships
+    user = relationship("User")
+    conversation = relationship("Conversation")
+    
+    # Constraints
+    __table_args__ = (
+        UniqueConstraint('user_id', 'conversation_id', name='_unique_saved_conversation'),
+    )
+    
+    def __repr__(self):
+        return f"<SavedConversation(user_id={self.user_id}, conversation_id={self.conversation_id})>"
+
+
+class Collection(Base):
+    """User-created collections of conversations."""
+    __tablename__ = "collections"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    is_public = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    items = relationship("CollectionItem", back_populates="collection", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<Collection(id={self.id}, name='{self.name}', user_id={self.user_id})>"
+
+
+class CollectionItem(Base):
+    """Items within a collection."""
+    __tablename__ = "collection_items"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    collection_id = Column(Integer, ForeignKey("collections.id"), nullable=False)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
+    added_at = Column(DateTime(timezone=True), server_default=func.now())
+    order_index = Column(Integer, default=0)  # For custom ordering
+    
+    # Relationships
+    collection = relationship("Collection", back_populates="items")
+    conversation = relationship("Conversation")
+    
+    def __repr__(self):
+        return f"<CollectionItem(collection_id={self.collection_id}, conversation_id={self.conversation_id})>"
+
+
+class HumanMessage(Base):
+    """Human chat messages in conversation rooms."""
+    __tablename__ = "human_messages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    content = Column(Text, nullable=False)
+    sent_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)  # Auto-delete after 30 days
+    
+    # Relationships
+    conversation = relationship("Conversation")
+    user = relationship("User")
+    
+    def __init__(self, **kwargs):
+        """Initialize with 30-day expiration if not provided."""
+        if 'expires_at' not in kwargs:
+            kwargs['expires_at'] = datetime.utcnow() + timedelta(days=30)
+        super().__init__(**kwargs)
+    
+    def is_expired(self) -> bool:
+        """Check if message has expired."""
+        return datetime.utcnow() > self.expires_at
+    
+    def __repr__(self):
+        return f"<HumanMessage(id={self.id}, user_id={self.user_id}, conversation_id={self.conversation_id})>"
+
+
+class Collaborator(Base):
+    """Collaborators in conversations."""
+    __tablename__ = "collaborators"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    invited_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    invited_at = Column(DateTime(timezone=True), server_default=func.now())
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
+    left_at = Column(DateTime(timezone=True), nullable=True)
+    can_suggest_prompts = Column(Boolean, default=True)
+    
+    # Relationships
+    conversation = relationship("Conversation")
+    user = relationship("User", foreign_keys=[user_id])
+    invited_by = relationship("User", foreign_keys=[invited_by_id])
+    
+    # Constraints
+    __table_args__ = (
+        UniqueConstraint('conversation_id', 'user_id', name='_unique_collaborator'),
+    )
+    
+    def is_active(self) -> bool:
+        """Check if collaborator is currently active."""
+        return self.accepted_at is not None and self.left_at is None
+    
+    def accept_invitation(self):
+        """Accept the collaboration invitation."""
+        self.accepted_at = datetime.utcnow()
+    
+    def leave_collaboration(self):
+        """Leave the collaboration."""
+        self.left_at = datetime.utcnow()
+    
+    def __repr__(self):
+        return f"<Collaborator(user_id={self.user_id}, conversation_id={self.conversation_id})>"
+
+
+class Notification(Base):
+    """User notifications for social interactions."""
+    __tablename__ = "notifications"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    type = Column(String(50), nullable=False)  # 'follow', 'collaboration_invite', 'new_conversation'
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    related_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # The user who triggered the notification
+    related_conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=True)
+    topic_tags = Column(JSON, default=list)  # For smart topic-based notifications
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    read_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    related_user = relationship("User", foreign_keys=[related_user_id])
+    related_conversation = relationship("Conversation", foreign_keys=[related_conversation_id])
+    
+    def mark_as_read(self):
+        """Mark notification as read."""
+        self.read_at = datetime.utcnow()
+    
+    def is_read(self) -> bool:
+        """Check if notification has been read."""
+        return self.read_at is not None
+    
+    def __repr__(self):
+        return f"<Notification(id={self.id}, type='{self.type}', user_id={self.user_id})>"

@@ -12,7 +12,7 @@
 ### Step 2: Configure Environment Variables
 In the frontend service settings → Variables:
 ```
-VITE_API_URL=https://bountiful-wholeness-production-eedc.up.railway.app
+VITE_API_URL=https://vectorspace-production.up.railway.app
 NODE_ENV=production
 ```
 
@@ -39,7 +39,7 @@ restartPolicyMaxRetries = 3
 
 [environment]
 NODE_ENV = "production"
-VITE_API_URL = "https://bountiful-wholeness-production-eedc.up.railway.app"
+VITE_API_URL = "https://vectorspace-production.up.railway.app"
 ```
 
 ### Updated API Configuration

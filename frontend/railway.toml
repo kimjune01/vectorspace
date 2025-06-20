@@ -10,4 +10,4 @@ restartPolicyMaxRetries = 3
 
 [environment]
 NODE_ENV = "production"
-VITE_API_URL = "https://bountiful-wholeness-production-eedc.up.railway.app"
+VITE_API_URL = "https://vectorspace-production.up.railway.app"

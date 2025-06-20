@@ -14,7 +14,7 @@ class VectorService:
         self, 
         persist_directory: str = "./chroma_db",
         collection_name: str = "conversation_summaries",
-        embedding_model: str = "all-MiniLM-L6-v2"
+        embedding_model: str = "text-embedding-3-small"
     ):
         """
         Initialize the vector service.
@@ -22,7 +22,7 @@ class VectorService:
         Args:
             persist_directory: Directory to persist ChromaDB data
             collection_name: Name of the ChromaDB collection
-            embedding_model: Sentence transformer model for embeddings
+            embedding_model: OpenAI embedding model for embeddings
         """
         self.persist_directory = persist_directory
         self.collection_name = collection_name
@@ -30,10 +30,18 @@ class VectorService:
         # Initialize ChromaDB client
         self.client = chromadb.PersistentClient(path=persist_directory)
         
-        # Initialize embedding function
-        self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=embedding_model
-        )
+        # Initialize OpenAI embedding function
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if openai_api_key:
+            self.embedding_function = embedding_functions.OpenAIEmbeddingFunction(
+                api_key=openai_api_key,
+                model_name=embedding_model
+            )
+            logger.info(f"VectorService initialized with OpenAI embeddings: {embedding_model}")
+        else:
+            # Fallback to default embedding function for development
+            logger.warning("No OPENAI_API_KEY found, using default embeddings")
+            self.embedding_function = embedding_functions.DefaultEmbeddingFunction()
         
         logger.info(f"VectorService initialized with collection: {collection_name}")
     

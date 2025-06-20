@@ -11,10 +11,6 @@ os.environ["TESTING"] = "1"
 os.environ["AI_MAX_TOKENS"] = "100"
 os.environ["CHROMA_DB_PATH"] = ":memory:"
 
-# Always mock sentence-transformers in tests to avoid loading heavy models
-mock_sentence_transformers = unittest.mock.MagicMock()
-sys.modules['sentence_transformers'] = mock_sentence_transformers
-
 # Mock the embedding function to return simple vectors
 class MockEmbeddingFunction:
     def __call__(self, input):
@@ -30,8 +26,11 @@ class MockEmbeddingFunction:
 
 # Patch ChromaDB embedding functions before any imports
 import chromadb.utils.embedding_functions as ef
-original_st_ef = ef.SentenceTransformerEmbeddingFunction
-ef.SentenceTransformerEmbeddingFunction = lambda **kwargs: MockEmbeddingFunction()
 
-# Also patch the direct import path
-sys.modules['chromadb.utils.embedding_functions'].SentenceTransformerEmbeddingFunction = lambda **kwargs: MockEmbeddingFunction()
+# Mock both OpenAI and default embedding functions for tests
+ef.OpenAIEmbeddingFunction = lambda **kwargs: MockEmbeddingFunction()
+ef.DefaultEmbeddingFunction = lambda **kwargs: MockEmbeddingFunction()
+
+# Also patch the direct import paths
+sys.modules['chromadb.utils.embedding_functions'].OpenAIEmbeddingFunction = lambda **kwargs: MockEmbeddingFunction()
+sys.modules['chromadb.utils.embedding_functions'].DefaultEmbeddingFunction = lambda **kwargs: MockEmbeddingFunction()

@@ -8,7 +8,9 @@ echo "🚀 Starting VectorSpace build..."
 # Build frontend
 echo "📦 Building frontend..."
 cd frontend
-npm install -g pnpm
+# Railway's nixpacks should have corepack, enable pnpm
+corepack enable
+corepack prepare pnpm@latest --activate
 pnpm install --frozen-lockfile
 VITE_API_BASE_URL=/api VITE_WS_URL=/api/ws pnpm run build
 

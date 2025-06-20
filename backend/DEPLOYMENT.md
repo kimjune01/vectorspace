@@ -111,7 +111,7 @@ The VectorSpace conversation discovery backend is now fully implemented with all
 
 ### Development Setup
 ```bash
-# Install dependencies
+# Install dependencies (includes dev dependencies)
 uv install
 
 # Run the development server
@@ -122,6 +122,15 @@ uv run python -m pytest
 
 # Run specific test suite
 uv run python -m pytest tests/test_search_api.py -v
+```
+
+### Production Setup
+```bash
+# Install production dependencies only (saves ~200-300MB)
+uv sync --no-dev --frozen
+
+# Run the production server
+uv run python main.py
 ```
 
 ### Environment Configuration
@@ -142,15 +151,77 @@ This is a **complete, production-ready backend** for a conversation discovery pl
 4. **Scales Efficiently** - Async architecture with background task processing
 5. **Maintains Data Quality** - Auto-archiving, summarization, and cleanup
 
+## 🐳 Docker Optimization
+
+### Production Docker Build Recommendations
+The current Docker images can be optimized to reduce size from ~1.6GB to under 800MB:
+
+#### Key Optimizations
+1. **Use Multi-Stage Builds**
+```dockerfile
+# Build stage
+FROM python:3.12-slim as builder
+COPY pyproject.toml uv.lock ./
+RUN pip install uv && uv sync --no-dev --frozen
+
+# Runtime stage
+FROM python:3.12-slim
+COPY --from=builder /app/.venv /app/.venv
+```
+
+2. **Production Dependencies Only**
+```bash
+# Use --no-dev flag for production builds (saves ~200-300MB)
+uv sync --no-dev --frozen
+```
+
+3. **Alpine Base Images**
+```dockerfile
+FROM python:3.12-alpine  # Saves ~200MB vs ubuntu:22.04
+```
+
+4. **Add .dockerignore**
+```
+node_modules/
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+tests/
+```
+
+#### Dependency Analysis Results
+- **Total packages**: 155 (148 production + 7 development)
+- **Largest dependencies**: torch, chromadb, sentence-transformers (ML stack)
+- **Dev dependency savings**: ~200-300MB with `--no-dev`
+- **Current issue**: pytest-bdd duplicated in both prod and dev dependencies
+
+### Fixed Dependency Configuration
+```toml
+# Move pytest-bdd to dev-only dependencies
+[dependency-groups]
+dev = [
+    "pytest-bdd>=8.1.0",  # Moved from production
+    "faker>=37.4.0",
+    "httpx>=0.28.1", 
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.2.1",
+    "pytest-xdist>=3.7.0",
+]
+```
+
 ## 🚀 Next Steps
 
 ### Immediate Production Considerations
-1. **Replace Mock AI Service** - Integrate with OpenAI, Anthropic, or other AI providers
-2. **Email Service Setup** - Configure SMTP for password resets (optional)
-3. **File Storage** - Add profile image upload with S3 or similar
-4. **Production Database** - Migrate from SQLite to PostgreSQL
-5. **Redis Integration** - Replace in-memory rate limiting and blacklists
-6. **Environment Secrets** - Secure JWT keys and API credentials
+1. **Docker Image Optimization** - Implement multi-stage builds with --no-dev
+2. **Replace Mock AI Service** - Integrate with OpenAI, Anthropic, or other AI providers
+3. **Email Service Setup** - Configure SMTP for password resets (optional)
+4. **File Storage** - Add profile image upload with S3 or similar
+5. **Production Database** - Migrate from SQLite to PostgreSQL
+6. **Redis Integration** - Replace in-memory rate limiting and blacklists
+7. **Environment Secrets** - Secure JWT keys and API credentials
 
 ### Scaling Considerations
 1. **Caching Layer** - Add Redis for search results and user profiles

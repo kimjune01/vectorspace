@@ -157,7 +157,7 @@ export class ApiClient {
 
   async register(username: string, display_name: string, email: string, password: string, bio?: string): Promise<AuthResponse> {
     const registerData: RegisterRequest = { username, display_name, email, password, bio };
-    const response = await this.request<AuthResponse>('/auth/register', {
+    const response = await this.request<AuthResponse>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify(registerData),
     });

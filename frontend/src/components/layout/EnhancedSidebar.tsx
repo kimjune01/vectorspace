@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from 'framer-motion';
 import ChatSidebar from './chat-sidebar';
 import SimilarConversationsSidebar from '../SimilarConversationsSidebar';
+import EnhancedDiscoverySidebar from '../EnhancedDiscoverySidebar';
 import type { Conversation } from '@/types';
 
 interface EnhancedSidebarProps {
@@ -66,7 +67,7 @@ export default function EnhancedSidebar({
               role="tab"
               aria-selected={activeTab === 'neighboring'}
             >
-              Neighboring Chats
+              Discovery
             </TabsTrigger>
             <TabsTrigger 
               value="my-chats"
@@ -86,20 +87,11 @@ export default function EnhancedSidebar({
               className="h-full"
               key={`${currentConversation?.id}-${lastUpdateTime}`} // Force re-render on updates
             >
-              {currentConversation && onConversationSelect ? (
-                <SimilarConversationsSidebar
-                  currentConversation={currentConversation}
-                  onConversationSelect={onConversationSelect}
-                  onNewChat={onNewChat}
-                />
-              ) : (
-                <div className="flex-1 flex items-center justify-center p-6">
-                  <div className="text-center text-muted-foreground">
-                    <p className="text-sm">Similar conversations will appear here</p>
-                    <p className="text-xs mt-2">Start chatting to see neighboring conversations</p>
-                  </div>
-                </div>
-              )}
+              <EnhancedDiscoverySidebar
+                currentConversation={currentConversation}
+                onConversationSelect={onConversationSelect || (() => {})}
+                onNewChat={onNewChat}
+              />
             </motion.div>
           </TabsContent>
 

@@ -11,6 +11,7 @@ import {
 import { User, Settings, LogOut, MessageSquare, Search, Home, UserPlus, Plus } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { NewConversationDialog } from '@/components/NewConversationDialog'
+import { NotificationBell } from '@/components/NotificationBell'
 
 export default function Navigation() {
   const location = useLocation()
@@ -83,6 +84,7 @@ export default function Navigation() {
                     <span>{user?.display_name || user?.username || 'Account'}</span>
                   </Button>
                 </Link>
+                <NotificationBell />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="px-2">

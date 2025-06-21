@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend (`/backend/backend/`)
 - **Framework**: FastAPI (async Python)
-- **Database**: SQLite with SQLAlchemy (async ORM)
+- **Database**: PostgreSQL with SQLAlchemy (async ORM)
 - **Vector Search**: ChromaDB for semantic conversation discovery
 - **Authentication**: JWT tokens with non-expiring sessions
 - **Real-time**: WebSocket for AI chat and user messaging

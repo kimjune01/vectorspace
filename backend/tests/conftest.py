@@ -23,30 +23,29 @@ def test_db_path(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def _database_url():
-    """Use a shared in-memory database for all tests."""
-    return "sqlite+aiosqlite:///:memory:?cache=shared"
+    """Use PostgreSQL test database for all tests."""
+    return "postgresql+asyncpg://postgres:postgres@localhost:5432/vectorspace_test"
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def engine(_database_url):
     """Create an async SQLAlchemy engine for testing - shared across session."""
     from app.database import Base
     # Import all models to ensure they're registered with Base.metadata
     import app.models  # This registers all model classes with Base
     
-    # Use in-memory database for speed
+    # Use PostgreSQL test database
     engine = create_async_engine(
         _database_url,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
         echo=False,  # Disable SQL logging for performance
     )
     
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    yield engine
-    
-    await engine.dispose()
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
 
 @pytest_asyncio.fixture
 async def db_session(engine):

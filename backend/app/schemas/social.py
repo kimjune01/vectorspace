@@ -225,27 +225,140 @@ class AcceptCollaborationRequest(BaseModel):
 class NotificationResponse(BaseModel):
     """Schema for notification response."""
     id: int
-    user_id: int
     type: str
     title: str
-    content: str
-    related_user_id: Optional[int]
-    related_conversation_id: Optional[int]
-    topic_tags: List[str]
+    message: str
+    is_read: bool
     created_at: datetime
-    read_at: Optional[datetime]
-    # Include related user/conversation details
-    related_user_username: Optional[str]
-    related_user_display_name: Optional[str]
-    related_conversation_title: Optional[str]
+    related_user_id: Optional[int]
+    related_user: Optional[FollowerResponse]
+    related_conversation_id: Optional[int]
     
     class Config:
         from_attributes = True
 
 
+class NotificationListResponse(BaseModel):
+    """Schema for paginated notifications response."""
+    notifications: List[NotificationResponse]
+    total: int
+    page: int
+    per_page: int
+    has_next: bool
+    has_prev: bool
+
+
+class NotificationStatsResponse(BaseModel):
+    """Schema for notification statistics."""
+    unread_count: int
+    total_count: int
+
+
 class NotificationUpdate(BaseModel):
     """Schema for updating notification (mark as read)."""
     read: bool = True
+
+
+# ========================================
+# CURATION SCHEMAS
+# ========================================
+
+class SaveConversationRequest(BaseModel):
+    """Schema for saving a conversation."""
+    tags: Optional[List[str]] = []
+    personal_note: Optional[str] = None
+
+
+class SavedConversationResponse(BaseModel):
+    """Schema for saved conversation response."""
+    id: int
+    user_id: int
+    conversation_id: int
+    saved_at: datetime
+    tags: List[str]
+    personal_note: Optional[str]
+    conversation_title: str
+    conversation_summary: Optional[str]
+    conversation_author: str
+    
+    class Config:
+        from_attributes = True
+
+
+class UpdateSavedConversationRequest(BaseModel):
+    """Schema for updating saved conversation."""
+    tags: Optional[List[str]] = None
+    personal_note: Optional[str] = None
+
+
+class CollectionCreate(BaseModel):
+    """Schema for creating a collection."""
+    name: str
+    description: Optional[str] = None
+    is_public: Optional[bool] = True
+    conversation_ids: Optional[List[int]] = []
+
+
+class CollectionUpdate(BaseModel):
+    """Schema for updating a collection."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
+
+
+class CollectionResponse(BaseModel):
+    """Schema for collection response."""
+    id: int
+    user_id: int
+    name: str
+    description: Optional[str]
+    is_public: bool
+    created_at: datetime
+    updated_at: datetime
+    items_count: int
+    
+    class Config:
+        from_attributes = True
+
+
+class CollectionWithItemsResponse(BaseModel):
+    """Schema for collection with items response."""
+    id: int
+    user_id: int
+    name: str
+    description: Optional[str]
+    is_public: bool
+    created_at: datetime
+    updated_at: datetime
+    items: List[SavedConversationResponse]
+    
+    class Config:
+        from_attributes = True
+
+
+class AddToCollectionRequest(BaseModel):
+    """Schema for adding conversations to a collection."""
+    conversation_ids: List[int]
+
+
+class PaginatedSavedConversationsResponse(BaseModel):
+    """Schema for paginated saved conversations response."""
+    saved_conversations: List[SavedConversationResponse]
+    total: int
+    page: int
+    per_page: int
+    has_next: bool
+    has_prev: bool
+
+
+class PaginatedCollectionsResponse(BaseModel):
+    """Schema for paginated collections response."""
+    collections: List[CollectionResponse]
+    total: int
+    page: int
+    per_page: int
+    has_next: bool
+    has_prev: bool
 
 
 # ========================================

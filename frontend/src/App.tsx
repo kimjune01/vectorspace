@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ChatPage from './pages/ChatPage'
 import ProfilePage from './pages/ProfilePage'
+import SavedConversationsPage from './pages/SavedConversationsPage'
 import { DebugPanel } from './components/debug/DebugPanel'
 import { useApiLogger } from './hooks/useApiLogger'
 
@@ -32,6 +33,7 @@ function App() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/chat/:id" element={<ChatPage />} />
                 <Route path="/profile/:username" element={<ProfilePage />} />
+                <Route path="/saved" element={<SavedConversationsPage />} />
               </Routes>
             </main>
             {/* Debug tools - only visible in development */}

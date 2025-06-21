@@ -352,3 +352,123 @@ import type {
   Notification, NotificationUpdate, PaginatedNotifications,
   DiscoverPerson, FollowingActivity
 } from './social';
+
+// ========================================
+// CORPUS SERVICE API TYPES
+// ========================================
+
+export interface CorpusHealthResponse {
+  status: string;
+  corpus_service: string;
+  collections: Record<string, any>;
+  error?: string;
+}
+
+export interface CorpusCollectionsResponse {
+  collections: string[];
+  debug: {
+    user_id: number;
+    corpus_url: string;
+  };
+}
+
+export interface CorpusSearchResult {
+  id: string;
+  content: string;
+  title: string;
+  url: string;
+  platform: string;
+  author: string;
+  timestamp: string;
+  score?: number;
+  comment_count?: number;
+  similarity_score: number;
+  metadata?: Record<string, any>;
+}
+
+export interface CorpusSearchRequest {
+  query_texts: string[];
+  collections?: string[];
+  limit?: number;
+  min_similarity?: number;
+}
+
+export interface CorpusSearchResponse {
+  results: CorpusSearchResult[];
+  query: string[];
+  collections_searched: string[];
+  total_found: number;
+  debug: {
+    user_id: number;
+    corpus_url: string;
+    search_params: CorpusSearchRequest;
+  };
+}
+
+export interface CorpusCollectionStats {
+  collection: string;
+  stats: {
+    name: string;
+    document_count: number;
+    last_updated: string;
+    size_bytes?: number;
+    sample_documents: string[];
+  };
+  debug: {
+    user_id: number;
+    corpus_url: string;
+  };
+}
+
+export interface CorpusDebugStatus {
+  corpus_health: {
+    status: string;
+    corpus_service: string;
+    url: string;
+    error?: string;
+    suggestion?: string;
+  };
+  integration_config: {
+    corpus_service_url: string;
+    request_timeout: number;
+    current_user: string;
+  };
+  collections?: string[];
+  corpus_debug?: any;
+  corpus_api_error?: {
+    error: string;
+    details: Record<string, any>;
+  };
+}
+
+// Enhanced neighboring conversation type that includes external corpus results
+export interface EnhancedSimilarConversation {
+  // Internal conversation fields
+  id?: number;
+  title: string;
+  summary: string;
+  similarity_score: number;
+  author: {
+    username: string;
+  };
+  
+  // External corpus fields
+  corpus_id?: string;
+  url?: string;
+  platform?: string;
+  timestamp?: string;
+  comment_count?: number;
+  score?: number;
+  
+  // Type discriminator
+  source: 'internal' | 'external';
+}
+
+export interface EnhancedSimilarConversationsResponse {
+  internal_conversations: Conversation[];
+  external_conversations: CorpusSearchResult[];
+  total_internal: number;
+  total_external: number;
+  corpus_available: boolean;
+  corpus_error?: string;
+}

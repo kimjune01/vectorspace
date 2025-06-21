@@ -168,6 +168,18 @@ class ConversationWebSocketManager:
         
         return participants
     
+    def get_conversation_users(self, conversation_id: int) -> List[int]:
+        """Get list of user IDs currently connected to a conversation."""
+        if conversation_id not in self.active_connections:
+            return []
+        
+        # Get unique user IDs (a user might have multiple connections)
+        user_ids = set()
+        for connection in self.active_connections[conversation_id]:
+            user_ids.add(connection.user_id)
+        
+        return list(user_ids)
+    
     def get_connection_count(self, conversation_id: int) -> int:
         """Get the number of active connections for a conversation."""
         return len(self.active_connections.get(conversation_id, []))

@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Calendar, ArrowLeft, Settings } from 'lucide-react';
+import { MessageSquare, Calendar, ArrowLeft, Settings, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import { useApiWithErrorHandling } from '@/contexts/ErrorContext';
+import { FollowButton } from '@/components/FollowButton';
 
 interface UserProfile {
+  id: number;
   username: string;
   display_name: string;
   bio?: string;
@@ -21,6 +23,11 @@ interface UserProfile {
   conversations_last_24h: number;
   created_at: string;
   recent_conversations: Conversation[];
+}
+
+interface FollowStats {
+  followers_count: number;
+  following_count: number;
 }
 
 interface Conversation {
@@ -40,6 +47,7 @@ export default function ProfilePage() {
   const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [followStats, setFollowStats] = useState<FollowStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const { handleApiCall } = useApiWithErrorHandling();
@@ -51,6 +59,23 @@ export default function ProfilePage() {
       fetchProfile();
     }
   }, [username]);
+
+  useEffect(() => {
+    if (profile) {
+      fetchFollowStats(profile.id);
+    }
+  }, [profile]);
+
+  const fetchFollowStats = async (userId: number) => {
+    const stats = await handleApiCall(
+      () => apiClient.getUserFollowStats(userId),
+      () => fetchFollowStats(userId)
+    );
+    
+    if (stats) {
+      setFollowStats(stats);
+    }
+  };
 
   const fetchProfile = async () => {
     setIsLoading(true);
@@ -157,11 +182,24 @@ export default function ProfilePage() {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-2xl font-bold">{profile.display_name}</h2>
-                  {isOwnProfile && (
+                  {isOwnProfile ? (
                     <Button variant="outline" size="sm">
                       <Settings className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>
+                  ) : (
+                    <FollowButton 
+                      targetUserId={profile.id}
+                      onFollowChange={(isFollowing) => {
+                        if (followStats) {
+                          setFollowStats({
+                            ...followStats,
+                            followers_count: followStats.followers_count + (isFollowing ? 1 : -1)
+                          });
+                        }
+                      }}
+                      size="sm"
+                    />
                   )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
@@ -182,6 +220,18 @@ export default function ProfilePage() {
                     <div className="text-2xl font-bold">{profile.conversations_last_24h}</div>
                     <div className="text-sm text-muted-foreground">Last 24 Hours</div>
                   </div>
+                  {followStats && (
+                    <>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">{followStats.followers_count}</div>
+                        <div className="text-sm text-muted-foreground">Followers</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">{followStats.following_count}</div>
+                        <div className="text-sm text-muted-foreground">Following</div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

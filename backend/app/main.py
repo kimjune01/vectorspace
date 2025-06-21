@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from app.routers import auth, conversation, websocket, search, admin, users
+from app.routers import auth, conversation, websocket, search, admin, users, notifications, curation, human_chat, corpus, collaboration
 from app.database import Base, engine, init_database, check_database_connection
 from app.services.presence_manager import start_presence_cleanup_task
 from app.services.websocket_manager import websocket_manager
@@ -34,6 +34,11 @@ app.include_router(websocket.router, prefix="/api/ws", tags=["websocket"])
 app.include_router(search.router, prefix="/api", tags=["search"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(curation.router, prefix="/api/curation", tags=["curation"])
+app.include_router(human_chat.router, prefix="/api/human-chat", tags=["human-chat"])
+app.include_router(corpus.router, prefix="/api/corpus", tags=["corpus"])
+app.include_router(collaboration.router, prefix="/api/collaboration", tags=["collaboration"])
 
 @app.get("/")
 async def root():

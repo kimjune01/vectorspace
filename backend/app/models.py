@@ -30,6 +30,12 @@ class User(Base):
     
     # Relationships
     conversations = relationship("Conversation", back_populates="user")
+    prompt_suggestions = relationship("PromptSuggestion", foreign_keys="PromptSuggestion.suggester_id", back_populates="suggester")
+    collaborations = relationship("ConversationCollaboration", foreign_keys="ConversationCollaboration.collaborator_id", back_populates="collaborator")
+    
+    # Follow relationships
+    followers = relationship("Follow", foreign_keys="Follow.following_id", back_populates="following")
+    following = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
     
     def __init__(self, **kwargs):
         """Initialize user with auto-generated stripe pattern seed."""
@@ -67,6 +73,9 @@ class Conversation(Base):
     user = relationship("User", back_populates="conversations")
     messages = relationship("Message", back_populates="conversation")
     participants = relationship("ConversationParticipant", back_populates="conversation")
+    prompt_suggestions = relationship("PromptSuggestion", back_populates="conversation")
+    collaborations = relationship("ConversationCollaboration", back_populates="conversation")
+    versions = relationship("ConversationVersion", back_populates="conversation")
     
     def archive(self):
         """Archive this conversation."""
@@ -438,3 +447,6 @@ class Notification(Base):
     
     def __repr__(self):
         return f"<Notification(id={self.id}, type='{self.type}', user_id={self.user_id})>"
+
+
+# Note: Collaboration and discovery models are imported separately when needed

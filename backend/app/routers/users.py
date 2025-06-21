@@ -3,8 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
 from typing import Optional, List
 from app.database import get_db
-from app.models import User, Conversation
+from app.models import User, Conversation, Follow, Notification
 from app.auth import get_current_user, get_current_user_optional
+from app.schemas.social import (
+    FollowCreate, FollowResponse, UserFollowStats, 
+    FollowerResponse, PaginatedFollowersResponse, PaginatedFollowingResponse
+)
 from pydantic import BaseModel
 import logging
 
@@ -538,3 +542,344 @@ async def get_stripe_pattern(
     except Exception as e:
         logger.error(f"Error generating stripe pattern: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate stripe pattern")
+
+
+# ========================================
+# FOLLOW SYSTEM ENDPOINTS
+# ========================================
+
+@router.post("/{user_id}/follow")
+async def follow_user(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Follow a user.
+    
+    - Cannot follow yourself
+    - Creates follow relationship if not already following
+    - Creates notification for the followed user
+    """
+    try:
+        if user_id == current_user.id:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot follow yourself"
+            )
+        
+        # Check if target user exists
+        target_user_result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        target_user = target_user_result.scalar_one_or_none()
+        
+        if not target_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if already following
+        existing_follow_result = await db.execute(
+            select(Follow).where(
+                Follow.follower_id == current_user.id,
+                Follow.following_id == user_id
+            )
+        )
+        existing_follow = existing_follow_result.scalar_one_or_none()
+        
+        if existing_follow:
+            raise HTTPException(
+                status_code=400,
+                detail="Already following this user"
+            )
+        
+        # Create follow relationship
+        follow = Follow(
+            follower_id=current_user.id,
+            following_id=user_id
+        )
+        db.add(follow)
+        
+        # Create notification for followed user
+        notification = Notification(
+            user_id=user_id,
+            type="follow",
+            title="New Follower",
+            content=f"{current_user.display_name} started following you",
+            related_user_id=current_user.id
+        )
+        db.add(notification)
+        
+        await db.commit()
+        await db.refresh(follow)
+        
+        return FollowResponse(
+            id=follow.id,
+            follower_id=follow.follower_id,
+            following_id=follow.following_id,
+            created_at=follow.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error following user: {e}")
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to follow user")
+
+
+@router.delete("/{user_id}/follow")
+async def unfollow_user(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Unfollow a user.
+    
+    - Removes follow relationship if it exists
+    - No error if not following
+    """
+    try:
+        # Find and delete follow relationship
+        follow_result = await db.execute(
+            select(Follow).where(
+                Follow.follower_id == current_user.id,
+                Follow.following_id == user_id
+            )
+        )
+        follow = follow_result.scalar_one_or_none()
+        
+        if follow:
+            await db.delete(follow)
+            await db.commit()
+        
+        return {"message": "Successfully unfollowed user"}
+        
+    except Exception as e:
+        logger.error(f"Error unfollowing user: {e}")
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to unfollow user")
+
+
+@router.get("/{user_id}/followers")
+async def get_user_followers(
+    user_id: int,
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(20, ge=1, le=100, description="Items per page"),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get user's followers list.
+    
+    - Public endpoint (no auth required)
+    - Returns follower user info with follow timestamp
+    - Paginated results
+    """
+    try:
+        # Check if user exists
+        user_result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        offset = (page - 1) * per_page
+        
+        # Get followers with user info
+        followers_result = await db.execute(
+            select(Follow, User)
+            .join(User, Follow.follower_id == User.id)
+            .where(Follow.following_id == user_id)
+            .order_by(desc(Follow.created_at))
+            .offset(offset)
+            .limit(per_page)
+        )
+        followers_data = followers_result.all()
+        
+        # Get total count
+        total_result = await db.execute(
+            select(func.count(Follow.id))
+            .where(Follow.following_id == user_id)
+        )
+        total_count = total_result.scalar()
+        
+        # Format response
+        followers = []
+        for follow, follower_user in followers_data:
+            followers.append(FollowerResponse(
+                id=follower_user.id,
+                username=follower_user.username,
+                display_name=follower_user.display_name,
+                bio=follower_user.bio,
+                profile_image_data=follower_user.profile_image_data,
+                stripe_pattern_seed=follower_user.stripe_pattern_seed,
+                followed_at=follow.created_at
+            ))
+        
+        return PaginatedFollowersResponse(
+            followers=followers,
+            total=total_count,
+            page=page,
+            per_page=per_page,
+            has_next=offset + len(followers) < total_count,
+            has_prev=page > 1
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting followers: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve followers")
+
+
+@router.get("/{user_id}/following")
+async def get_user_following(
+    user_id: int,
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(20, ge=1, le=100, description="Items per page"),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get list of users this user is following.
+    
+    - Public endpoint (no auth required)
+    - Returns following user info with follow timestamp
+    - Paginated results
+    """
+    try:
+        # Check if user exists
+        user_result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        offset = (page - 1) * per_page
+        
+        # Get following with user info
+        following_result = await db.execute(
+            select(Follow, User)
+            .join(User, Follow.following_id == User.id)
+            .where(Follow.follower_id == user_id)
+            .order_by(desc(Follow.created_at))
+            .offset(offset)
+            .limit(per_page)
+        )
+        following_data = following_result.all()
+        
+        # Get total count
+        total_result = await db.execute(
+            select(func.count(Follow.id))
+            .where(Follow.follower_id == user_id)
+        )
+        total_count = total_result.scalar()
+        
+        # Format response
+        following = []
+        for follow, following_user in following_data:
+            following.append(FollowerResponse(
+                id=following_user.id,
+                username=following_user.username,
+                display_name=following_user.display_name,
+                bio=following_user.bio,
+                profile_image_data=following_user.profile_image_data,
+                stripe_pattern_seed=following_user.stripe_pattern_seed,
+                followed_at=follow.created_at
+            ))
+        
+        return PaginatedFollowingResponse(
+            following=following,
+            total=total_count,
+            page=page,
+            per_page=per_page,
+            has_next=offset + len(following) < total_count,
+            has_prev=page > 1
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting following: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve following")
+
+
+@router.get("/{user_id}/follow-stats")
+async def get_user_follow_stats(
+    user_id: int,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get user's follow statistics.
+    
+    - Returns follower and following counts
+    - Public endpoint (no auth required)
+    """
+    try:
+        # Check if user exists
+        user_result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get follower count
+        followers_count_result = await db.execute(
+            select(func.count(Follow.id))
+            .where(Follow.following_id == user_id)
+        )
+        followers_count = followers_count_result.scalar()
+        
+        # Get following count
+        following_count_result = await db.execute(
+            select(func.count(Follow.id))
+            .where(Follow.follower_id == user_id)
+        )
+        following_count = following_count_result.scalar()
+        
+        return UserFollowStats(
+            followers_count=followers_count,
+            following_count=following_count
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting follow stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve follow stats")
+
+
+@router.get("/me/is-following/{user_id}")
+async def check_if_following(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Check if current user is following a specific user.
+    
+    - Returns boolean indicating follow status
+    - Requires authentication
+    """
+    try:
+        follow_result = await db.execute(
+            select(Follow).where(
+                Follow.follower_id == current_user.id,
+                Follow.following_id == user_id
+            )
+        )
+        follow = follow_result.scalar_one_or_none()
+        
+        return {"is_following": follow is not None}
+        
+    except Exception as e:
+        logger.error(f"Error checking follow status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to check follow status")

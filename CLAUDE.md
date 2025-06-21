@@ -31,6 +31,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Authentication**: JWT with auth context
 - **Development Tools**: Comprehensive debugging suite with API logging, error handling, and state visibility
 
+### Corpus Service (`/corpus/`)
+- **Framework**: FastAPI microservice (async Python)
+- **Purpose**: External content discovery from Hacker News and other platforms
+- **Database**: Separate ChromaDB instance for vector similarity search
+- **Integration**: Proxied through main backend at `/api/corpus/*` endpoints
+- **Features**: Semantic similarity matching, content summarization, real-time health monitoring
+
 ## Development Setup
 
 ### Project Initialization
@@ -59,6 +66,12 @@ pnpm run preview               # Preview production build
 pnpm test                      # Run test suite (82/83 tests passing)
 ```
 
+#### Corpus Service (External Content Discovery)
+```bash
+cd corpus
+uv run python main.py          # Start corpus service (port 8001)
+```
+
 #### Database Seeding (Development)
 ```bash
 cd backend
@@ -85,6 +98,7 @@ uv run python seed_database.py # Seed database with test user (testuser/testpass
 
 ### API Integration
 - **Backend URLs**: `http://localhost:8000/api/*`
+- **Corpus URLs**: `http://localhost:8000/api/corpus/*` (proxied to `http://localhost:8001`)
 - **Authentication**: JWT Bearer tokens in Authorization header
 - **WebSocket**: `ws://localhost:8000/api/ws/conversations/{id}`
 - **Error Handling**: Consistent error responses with proper HTTP status codes
@@ -140,6 +154,7 @@ uv run python seed_database.py # Seed database with test user (testuser/testpass
 VectorSpace is now a fully functional conversation discovery platform with:
 - Complete backend API (229+ tests, production-ready)
 - Complete frontend application (React + TypeScript, 82/83 tests passing)
+- **External content discovery via corpus microservice (Hacker News integration)**
 - Real-time chat with WebSocket integration
 - Semantic search and conversation discovery
 - User authentication and profile management

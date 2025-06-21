@@ -10,7 +10,12 @@ import type {
   RegisterRequest,
   ConversationCreateRequest,
   ConversationCreateResponse,
-  SimilarConversationsResponse
+  SimilarConversationsResponse,
+  CorpusHealthResponse,
+  CorpusCollectionsResponse,
+  CorpusSearchResponse,
+  CorpusCollectionStats,
+  CorpusDebugStatus
 } from '@/types/api';
 
 // Use environment variable in production, fallback to proxy in development
@@ -234,6 +239,280 @@ export class ApiClient {
     return this.request<User & { recent_conversations: any[] }>(`/users/profile/${username}`);
   }
 
+  // Follow system endpoints
+  async followUser(userId: number) {
+    return this.request(`/users/${userId}/follow`, {
+      method: 'POST',
+    });
+  }
+
+  async unfollowUser(userId: number) {
+    return this.request(`/users/${userId}/follow`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getUserFollowers(userId: number, page: number = 1, perPage: number = 20) {
+    return this.request(`/users/${userId}/followers?page=${page}&per_page=${perPage}`);
+  }
+
+  async getUserFollowing(userId: number, page: number = 1, perPage: number = 20) {
+    return this.request(`/users/${userId}/following?page=${page}&per_page=${perPage}`);
+  }
+
+  async getUserFollowStats(userId: number) {
+    return this.request(`/users/${userId}/follow-stats`);
+  }
+
+  async checkIfFollowing(userId: number) {
+    return this.request<{ is_following: boolean }>(`/users/me/is-following/${userId}`);
+  }
+
+  // Notification endpoints
+  async getNotifications(page: number = 1, perPage: number = 20, unreadOnly: boolean = false) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString(),
+      unread_only: unreadOnly.toString()
+    });
+    return this.request(`/notifications?${params}`);
+  }
+
+  async getNotificationStats() {
+    return this.request(`/notifications/stats`);
+  }
+
+  async markNotificationRead(notificationId: number) {
+    return this.request(`/notifications/${notificationId}/read`, {
+      method: 'POST',
+    });
+  }
+
+  async markAllNotificationsRead() {
+    return this.request(`/notifications/read-all`, {
+      method: 'POST',
+    });
+  }
+
+  async deleteNotification(notificationId: number) {
+    return this.request(`/notifications/${notificationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Curation endpoints
+  async saveConversation(conversationId: number, data?: {tags?: string[], personal_note?: string}) {
+    return this.request(`/curation/conversations/${conversationId}/save`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  }
+
+  async unsaveConversation(conversationId: number) {
+    return this.request(`/curation/conversations/${conversationId}/save`, {
+      method: 'DELETE',
+    });
+  }
+
+  async checkIfSaved(conversationId: number) {
+    return this.request<{ is_saved: boolean }>(`/curation/saved/check/${conversationId}`);
+  }
+
+  async getSavedConversations(page: number = 1, perPage: number = 20, tag?: string) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString()
+    });
+    if (tag) params.append('tag', tag);
+    return this.request(`/curation/saved?${params}`);
+  }
+
+  async updateSavedConversation(savedId: number, data: {tags?: string[], personal_note?: string}) {
+    return this.request(`/curation/saved/${savedId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createCollection(data: {name: string, description?: string, is_public?: boolean, conversation_ids?: number[]}) {
+    return this.request(`/curation/collections`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyCollections(page: number = 1, perPage: number = 20) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString()
+    });
+    return this.request(`/curation/collections?${params}`);
+  }
+
+  async getCollectionDetails(collectionId: number) {
+    return this.request(`/curation/collections/${collectionId}`);
+  }
+
+  async updateCollection(collectionId: number, data: {name?: string, description?: string, is_public?: boolean}) {
+    return this.request(`/curation/collections/${collectionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async addToCollection(collectionId: number, conversationIds: number[]) {
+    return this.request(`/curation/collections/${collectionId}/items`, {
+      method: 'POST',
+      body: JSON.stringify({conversation_ids: conversationIds}),
+    });
+  }
+
+  async removeFromCollection(collectionId: number, conversationId: number) {
+    return this.request(`/curation/collections/${collectionId}/items/${conversationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async deleteCollection(collectionId: number) {
+    return this.request(`/curation/collections/${collectionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Human chat endpoints
+  async sendHumanMessage(conversationId: number, content: string) {
+    return this.request(`/human-chat/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async getHumanMessages(conversationId: number, limit: number = 50, beforeId?: number) {
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+    });
+    if (beforeId) params.append('before_id', beforeId.toString());
+    
+    return this.request(`/human-chat/conversations/${conversationId}/messages?${params}`);
+  }
+
+  async getHumanChatInfo(conversationId: number) {
+    return this.request(`/human-chat/conversations/${conversationId}/chat-info`);
+  }
+
+  async deleteHumanMessage(conversationId: number, messageId: number) {
+    return this.request(`/human-chat/conversations/${conversationId}/messages/${messageId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async joinChatRoom(conversationId: number) {
+    return this.request(`/human-chat/conversations/${conversationId}/join`, {
+      method: 'POST',
+    });
+  }
+
+  async leaveChatRoom(conversationId: number) {
+    return this.request(`/human-chat/conversations/${conversationId}/leave`, {
+      method: 'POST',
+    });
+  }
+
+  async getOnlineUsers(conversationId: number) {
+    return this.request(`/human-chat/conversations/${conversationId}/online-users`);
+  }
+
+  // Corpus service endpoints
+  async getCorpusHealth(): Promise<CorpusHealthResponse> {
+    return this.request<CorpusHealthResponse>(`/corpus/health`);
+  }
+
+  async getCorpusCollections(): Promise<CorpusCollectionsResponse> {
+    return this.request<CorpusCollectionsResponse>(`/corpus/collections`);
+  }
+
+  async searchSimilarContent(queryTexts: string[], collections: string[] = ["hackernews"], limit: number = 5, minSimilarity: number = 0.75): Promise<CorpusSearchResponse> {
+    return this.request<CorpusSearchResponse>(`/corpus/similarity/search`, {
+      method: 'POST',
+      body: JSON.stringify({
+        query_texts: queryTexts,
+        collections,
+        limit,
+        min_similarity: minSimilarity
+      }),
+    });
+  }
+
+  async getCorpusCollectionStats(collectionName: string): Promise<CorpusCollectionStats> {
+    return this.request<CorpusCollectionStats>(`/corpus/collections/${collectionName}/stats`);
+  }
+
+  async getCorpusDebugStatus(): Promise<CorpusDebugStatus> {
+    return this.request<CorpusDebugStatus>(`/corpus/debug/status`);
+  }
+
+  // Collaboration endpoints
+  async createPromptSuggestion(conversationId: number, data: {
+    suggested_prompt: string;
+    reasoning?: string;
+    original_message_id?: number;
+    target_position?: number;
+  }) {
+    return this.request(`/collaboration/conversations/${conversationId}/suggestions`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getPromptSuggestions(conversationId: number, statusFilter?: string) {
+    const params = new URLSearchParams();
+    if (statusFilter) params.append('status_filter', statusFilter);
+    return this.request(`/collaboration/conversations/${conversationId}/suggestions?${params}`);
+  }
+
+  async updateSuggestionStatus(suggestionId: number, status: string) {
+    return this.request(`/collaboration/suggestions/${suggestionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async voteOnSuggestion(suggestionId: number, isUpvote: boolean) {
+    return this.request(`/collaboration/suggestions/${suggestionId}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ is_upvote: isUpvote }),
+    });
+  }
+
+  async inviteCollaborator(conversationId: number, data: {
+    invitee_username: string;
+    collaboration_type: string;
+    permissions: string;
+    message?: string;
+  }) {
+    return this.request(`/collaboration/conversations/${conversationId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyCollaborationInvitations(pendingOnly: boolean = true) {
+    const params = new URLSearchParams();
+    params.append('pending_only', pendingOnly.toString());
+    return this.request(`/collaboration/my-invitations?${params}`);
+  }
+
+  async respondToCollaborationInvitation(invitationId: number, accept: boolean) {
+    return this.request(`/collaboration/invitations/${invitationId}/respond`, {
+      method: 'POST',
+      body: JSON.stringify({ accept }),
+    });
+  }
+
+  async getCollaborationStats(conversationId: number) {
+    return this.request(`/collaboration/conversations/${conversationId}/stats`);
+  }
+
   // WebSocket URL helper
   getWebSocketUrl(conversationId: string): string {
     // Get WebSocket URL from environment or default to backend
@@ -247,3 +526,34 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient();
+
+// Simple API wrapper for components - maintains compatibility with existing patterns
+export const api = {
+  get: async (endpoint: string) => {
+    const response = await apiClient.request(endpoint);
+    return { data: response };
+  },
+  
+  post: async (endpoint: string, data?: any) => {
+    const response = await apiClient.request(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    return { data: response };
+  },
+  
+  put: async (endpoint: string, data?: any) => {
+    const response = await apiClient.request(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    return { data: response };
+  },
+  
+  delete: async (endpoint: string) => {
+    const response = await apiClient.request(endpoint, {
+      method: 'DELETE',
+    });
+    return { data: response };
+  },
+};

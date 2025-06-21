@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Optional, Dict, Any
+from typing import AsyncGenerator, Optional, Dict, Any, List
 import asyncio
 import random
 import string
@@ -324,6 +324,37 @@ class AIService:
             current_tokens += message_tokens
         
         return context_messages
+
+    async def generate_embedding(self, text: str) -> List[float]:
+        """
+        Generate embedding vector for text using OpenAI's embedding model.
+        
+        Args:
+            text: Text to generate embedding for
+            
+        Returns:
+            List of floats representing the embedding vector
+            
+        Raises:
+            Exception: If OpenAI API fails or client not configured
+        """
+        if not self.client:
+            raise Exception("OpenAI client not configured - OPENAI_API_KEY required for embeddings")
+        
+        try:
+            # Use OpenAI's embedding model
+            embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+            
+            response = await self.client.embeddings.create(
+                model=embedding_model,
+                input=text
+            )
+            
+            return response.data[0].embedding
+            
+        except Exception as e:
+            logger.error(f"Failed to generate embedding: {e}")
+            raise Exception(f"Embedding generation failed: {str(e)}")
 
 
 # Global instance

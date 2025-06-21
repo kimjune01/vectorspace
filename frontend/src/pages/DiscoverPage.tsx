@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BookmarkButton } from '@/components/BookmarkButton';
 import { Search, Filter, Clock, MessageSquare, User, ArrowLeft } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useApiWithErrorHandling } from '@/contexts/ErrorContext';
+import { useAuth } from '@/contexts/AuthContext';
 import type { SearchResult } from '@/types/api';
 
 export default function DiscoverPage() {
@@ -17,6 +19,7 @@ export default function DiscoverPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const { handleApiCall } = useApiWithErrorHandling();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchConversations();
@@ -158,7 +161,18 @@ export default function DiscoverPage() {
               onClick={() => window.location.href = `/chat/${conversation.id}`}
             >
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg line-clamp-2">{conversation.title}</CardTitle>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg line-clamp-2 flex-1">{conversation.title}</CardTitle>
+                  {user && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <BookmarkButton 
+                        conversationId={conversation.id}
+                        size="sm"
+                        onSaveChange={() => {}}
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <User className="h-3 w-3" />

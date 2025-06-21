@@ -210,32 +210,37 @@ export interface AcceptCollaborationRequest {
 
 export interface Notification {
   id: number;
-  user_id: number;
   type: string;
   title: string;
-  content: string;
-  related_user_id?: number;
-  related_conversation_id?: number;
-  topic_tags: string[];
+  message: string;
+  is_read: boolean;
   created_at: string;
-  read_at?: string;
-  related_user_username?: string;
-  related_user_display_name?: string;
-  related_conversation_title?: string;
+  related_user_id?: number;
+  related_user?: {
+    id: number;
+    username: string;
+    display_name: string;
+    profile_image_data?: string;
+  };
+  related_conversation_id?: number;
 }
 
 export interface NotificationUpdate {
   read?: boolean;
 }
 
-export interface PaginatedNotifications {
+export interface NotificationListResponse {
   notifications: Notification[];
   total: number;
   page: number;
   per_page: number;
   has_next: boolean;
   has_prev: boolean;
+}
+
+export interface NotificationStatsResponse {
   unread_count: number;
+  total_count: number;
 }
 
 // ========================================

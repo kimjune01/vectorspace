@@ -16,6 +16,7 @@ The API will be available at:
 - **Main API**: http://localhost:8000
 - **Interactive Docs**: http://localhost:8000/docs
 - **WebSocket**: ws://localhost:8000/api/ws/conversations/{id}
+- **Corpus Proxy**: http://localhost:8000/api/corpus/* (requires corpus service on port 8001)
 
 ## Testing
 

@@ -18,13 +18,15 @@ VectorSpace transforms AI conversations into a social discovery experience:
 - **JWT Authentication** with non-expiring tokens and secure logout
 - **AI Integration** with WebSocket chat and streaming responses
 - **Vector Search** powered by ChromaDB with semantic embeddings
+- **External Content Discovery** via corpus microservice (Hacker News integration)
 - **Auto-Processing** including summarization, archiving, and PII filtering
-- **Comprehensive Testing** with 187+ tests running in ~2 seconds
+- **Comprehensive Testing** with 229+ tests running in ~2 seconds
 
 ### Frontend (React + TypeScript) ✅ Complete
 - **Modern Stack** using Vite + React + TypeScript with shadcn/ui components
 - **Full Authentication** with login/register flows and protected routes
 - **Conversation Discovery** with semantic search and browsing feeds
+- **Enhanced Neighboring Chats** with external content from Hacker News
 - **Real-time Chat** with WebSocket integration and streaming AI responses
 - **User Profiles** with customizable bios, images, and conversation history
 - **Responsive Design** optimized for both desktop and mobile
@@ -61,9 +63,24 @@ pnpm run dev
 # Frontend runs on http://localhost:5173
 ```
 
+### Corpus Service (External Content Discovery)
+```bash
+# Optional: Set up external content discovery from Hacker News
+cd corpus
+cp .env.example .env
+# Add your OpenAI API key to .env file
+
+# Install dependencies and start corpus service
+uv sync --no-dev
+uv run python main.py
+
+# Corpus service runs on http://localhost:8001
+# Automatically integrates with main backend for external content
+```
+
 ### Testing
 ```bash
-# Run backend tests (187 tests in ~2 seconds!)
+# Run backend tests (229+ tests in ~2 seconds!)
 cd backend/backend
 uv run python -m pytest
 
@@ -110,6 +127,8 @@ DATABASE_URL=sqlite+aiosqlite:///./conversations.db
 - ChromaDB vector embeddings for intelligent content matching
 - Browse recent conversations feed
 - Find similar conversations based on content
+- **External Content Discovery** from Hacker News with semantic matching
+- Integrated view of internal conversations and external discussions
 
 ### 👤 User Profiles & Social
 - Customizable user profiles with bios and images
@@ -146,10 +165,11 @@ DATABASE_URL=sqlite+aiosqlite:///./conversations.db
 **VectorSpace is now feature-complete** with both backend and frontend fully implemented!
 
 ### ✅ Backend Features
-- Complete conversation discovery API with 187+ tests
+- Complete conversation discovery API with 229+ tests
 - JWT authentication with secure logout
 - Real-time WebSocket chat with AI streaming
 - Semantic search powered by ChromaDB
+- External content discovery via corpus microservice
 - User profiles with image upload support
 - Automated summarization and archiving
 
@@ -157,6 +177,7 @@ DATABASE_URL=sqlite+aiosqlite:///./conversations.db
 - Modern React + TypeScript application
 - Complete authentication flows (login/register)
 - Conversation discovery with semantic search
+- Enhanced neighboring chats with external content integration
 - Real-time chat interface with WebSocket integration
 - User profiles with customizable bios and images
 - Fully responsive design for mobile and desktop

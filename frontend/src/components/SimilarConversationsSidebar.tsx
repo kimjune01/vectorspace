@@ -4,11 +4,24 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlusCircle, MessageSquare, Clock, User, Eye, AlertTriangle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { 
+  PlusCircle, 
+  MessageSquare, 
+  Clock, 
+  User, 
+  Eye, 
+  AlertTriangle,
+  ExternalLink,
+  RefreshCw,
+  CheckCircle,
+  WifiOff,
+  Info
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/lib/api';
 import type { Conversation } from '@/types';
-import type { SearchResult } from '@/types/api';
+import type { SearchResult, CorpusSearchResult, CorpusHealthResponse } from '@/types/api';
 
 interface SimilarConversationsSidebarProps {
   currentConversation: Conversation | null;
@@ -21,15 +34,27 @@ export default function SimilarConversationsSidebar({
   onConversationSelect,
   onNewChat
 }: SimilarConversationsSidebarProps) {
+  // Internal conversations state
   const [similarConversations, setSimilarConversations] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
+  // External corpus state
+  const [externalResults, setExternalResults] = useState<CorpusSearchResult[]>([]);
+  const [externalLoading, setExternalLoading] = useState(false);
+  const [externalError, setExternalError] = useState<string | null>(null);
+  const [corpusAvailable, setCorpusAvailable] = useState(false);
+  const [corpusError, setCorpusError] = useState<string | null>(null);
+  const [showExternalContent, setShowExternalContent] = useState(true);
+  const [corpusDocCount, setCorpusDocCount] = useState(0);
+
   useEffect(() => {
     if (currentConversation?.summary_public) {
       fetchSimilarConversations();
+      checkCorpusHealth();
     } else {
       setSimilarConversations([]);
+      setExternalResults([]);
     }
   }, [currentConversation?.id, currentConversation?.summary_public]);
 
@@ -61,6 +86,78 @@ export default function SimilarConversationsSidebar({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Check corpus service health and availability
+  const checkCorpusHealth = async () => {
+    try {
+      const health = await apiClient.getCorpusHealth();
+      const isAvailable = health.status === 'healthy';
+      
+      setCorpusAvailable(isAvailable);
+      setCorpusError(isAvailable ? null : health.error || 'Corpus service unavailable');
+
+      if (isAvailable) {
+        try {
+          const collections = await apiClient.getCorpusCollections();
+          if (collections.collections.includes('hackernews')) {
+            const stats = await apiClient.getCorpusCollectionStats('hackernews');
+            setCorpusDocCount(stats.stats.document_count);
+          }
+        } catch (e) {
+          console.warn('Could not fetch corpus stats:', e);
+        }
+
+        // If corpus is available and we want to show external content, fetch it
+        if (showExternalContent && currentConversation?.summary_public) {
+          fetchExternalResults();
+        }
+      }
+    } catch (error) {
+      console.warn('Corpus health check failed:', error);
+      setCorpusAvailable(false);
+      setCorpusError(error instanceof Error ? error.message : 'Corpus service error');
+    }
+  };
+
+  // Fetch external corpus results
+  const fetchExternalResults = async () => {
+    if (!corpusAvailable || !currentConversation?.summary_public) return;
+
+    setExternalLoading(true);
+    setExternalError(null);
+
+    try {
+      const results = await apiClient.searchSimilarContent(
+        [currentConversation.summary_public],
+        ['hackernews'],
+        5,
+        0.7
+      );
+
+      setExternalResults(results.results || []);
+    } catch (err) {
+      console.error('Failed to fetch external results:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error loading external content';
+      setExternalError(errorMessage);
+      setExternalResults([]);
+
+      // If corpus becomes unavailable, update status
+      if (errorMessage.includes('connect') || errorMessage.includes('timeout')) {
+        setCorpusAvailable(false);
+        setCorpusError(errorMessage);
+      }
+    } finally {
+      setExternalLoading(false);
+    }
+  };
+
+  // Manual refresh function
+  const handleRefresh = async () => {
+    await Promise.all([
+      fetchSimilarConversations(),
+      checkCorpusHealth()
+    ]);
   };
 
   const handleConversationClick = (similarConv: SearchResult) => {
@@ -175,68 +272,217 @@ export default function SimilarConversationsSidebar({
       <motion.div 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }}
-        className="space-y-3"
+        className="space-y-4"
       >
-        <div className="text-xs font-medium text-muted-foreground px-2 mb-4">
-          Similar Conversations ({similarConversations.length})
-        </div>
-        <AnimatePresence>
-          {similarConversations.map((conv, index) => (
-            <motion.div
-              key={conv.id}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ 
-                opacity: 1, 
-                y: 0, 
-                transition: { delay: index * 0.05 } 
-              }}
-              exit={{ opacity: 0, x: -20 }}
-              layout
+        {/* Internal Conversations Section */}
+        <div>
+          <div className="flex items-center justify-between px-2 mb-3">
+            <div className="text-xs font-medium text-muted-foreground">
+              Similar Conversations ({similarConversations.length})
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              className="h-6 px-2"
             >
-              <Card 
-                className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/20"
-                onClick={() => handleConversationClick(conv)}
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          <AnimatePresence>
+            {similarConversations.map((conv, index) => (
+              <motion.div
+                key={conv.id}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0, 
+                  transition: { delay: index * 0.05 } 
+                }}
+                exit={{ opacity: 0, x: -20 }}
+                layout
+                className="mb-3"
               >
-                <CardContent className="p-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-sm line-clamp-2 flex-1">
-                      {conv.title}
-                    </h4>
-                    <Badge 
-                      variant="secondary" 
-                      className="ml-2 text-xs"
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/20 border-l-4 border-l-blue-500"
+                  onClick={() => handleConversationClick(conv)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-medium text-sm line-clamp-2 flex-1">
+                        {conv.title}
+                      </h4>
+                      <Badge 
+                        variant="outline" 
+                        className="ml-2 text-xs"
+                      >
+                        {Math.round((conv.similarity_score || 0) * 100)}%
+                      </Badge>
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                      {conv.summary}
+                    </p>
+                    
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        <span className="truncate max-w-[100px]">
+                          {conv.author.display_name || conv.author.username}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Eye className="h-3 w-3" />
+                          <span>{conv.view_count}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatDate(conv.created_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* External Content Section */}
+        {showExternalContent && (
+          <>
+            <Separator />
+            <div>
+              <div className="flex items-center justify-between px-2 mb-3">
+                <div className="flex items-center space-x-2">
+                  <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground">
+                    External Discussions
+                  </span>
+                  {externalLoading && <RefreshCw className="h-3 w-3 animate-spin" />}
+                  <Badge variant="secondary" className="text-xs">
+                    Hacker News
+                  </Badge>
+                </div>
+                {corpusAvailable ? (
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                ) : (
+                  <WifiOff className="h-3 w-3 text-red-500" />
+                )}
+              </div>
+
+              <AnimatePresence>
+                {externalError ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center py-4"
+                  >
+                    <AlertTriangle className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">{externalError}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fetchExternalResults()}
+                      className="mt-2 text-xs"
                     >
-                      {Math.round((conv.similarity_score || 0) * 100)}%
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                    {conv.summary}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      <span className="truncate max-w-[100px]">
-                        {conv.author.display_name || conv.author.username}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        <span>{conv.view_count}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{formatDate(conv.created_at)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+                      Retry
+                    </Button>
+                  </motion.div>
+                ) : !corpusAvailable ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-4"
+                  >
+                    <WifiOff className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">
+                      External content discovery unavailable
+                    </p>
+                    {corpusError && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {corpusError}
+                      </p>
+                    )}
+                  </motion.div>
+                ) : externalResults.length === 0 && !externalLoading ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-4"
+                  >
+                    <Info className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No related external content found</p>
+                  </motion.div>
+                ) : (
+                  externalResults.map((result, index) => (
+                    <motion.div
+                      key={result.id}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ 
+                        opacity: 1, 
+                        y: 0, 
+                        transition: { delay: index * 0.05 } 
+                      }}
+                      exit={{ opacity: 0, x: -20 }}
+                      layout
+                      className="mb-3"
+                    >
+                      <Card className="cursor-pointer hover:shadow-md transition-all duration-200 border-l-4 border-l-orange-500">
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-medium text-sm line-clamp-2 flex-1">
+                              {result.title}
+                            </h4>
+                            <div className="flex items-center space-x-1 ml-2">
+                              <Badge variant="outline" className="text-xs">
+                                {Math.round(result.similarity_score * 100)}%
+                              </Badge>
+                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                            </div>
+                          </div>
+                          
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                            {result.content.substring(0, 150)}...
+                          </p>
+                          
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                            <div className="flex items-center space-x-2">
+                              <span>@{result.author}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {result.platform}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              {result.score && <span>↑{result.score}</span>}
+                              {result.comment_count && <span>💬{result.comment_count}</span>}
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(result.url, '_blank');
+                            }}
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            View on {result.platform}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
       </motion.div>
     );
   };
@@ -244,7 +490,7 @@ export default function SimilarConversationsSidebar({
   return (
     <div className="h-full w-full flex flex-col bg-background border-r border-border/60">
       {/* Header */}
-      <div className="p-3 border-b border-border/60">
+      <div className="p-3 border-b border-border/60 space-y-3">
         <Button
           variant="outline"
           className="w-full justify-start text-sm hover:bg-muted/50"
@@ -253,6 +499,37 @@ export default function SimilarConversationsSidebar({
           <PlusCircle className="mr-2 h-4 w-4" />
           New Chat
         </Button>
+
+        {/* Corpus Status Indicator */}
+        {currentConversation?.summary_public && (
+          <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              {corpusAvailable ? (
+                <CheckCircle className="h-3 w-3 text-green-500" />
+              ) : (
+                <WifiOff className="h-3 w-3 text-red-500" />
+              )}
+              <span className="text-xs font-medium">
+                External Content {corpusAvailable ? 'Connected' : 'Unavailable'}
+              </span>
+              {corpusAvailable && corpusDocCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {corpusDocCount} posts
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowExternalContent(!showExternalContent)}
+                className="h-6 px-2 text-xs"
+              >
+                {showExternalContent ? 'Hide' : 'Show'}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Content */}

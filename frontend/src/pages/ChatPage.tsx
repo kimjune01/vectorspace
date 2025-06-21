@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatInterface } from '@/components/chat/ChatInterface';
+import { BookmarkButton } from '@/components/BookmarkButton';
+import { HumanChatPanel } from '@/components/HumanChatPanel';
+import { CollaborationToolbar } from '@/components/collaboration/CollaborationToolbar';
 import { ArrowLeft, Settings, Archive, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
@@ -21,10 +24,13 @@ export default function ChatPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [collaborationStats, setCollaborationStats] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
       fetchConversation();
+      fetchCollaborationStats();
     }
   }, [id]);
 
@@ -43,6 +49,24 @@ export default function ChatPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchCollaborationStats = async () => {
+    if (!id || !user) return;
+    
+    try {
+      const stats = await apiClient.request(`/collaboration/conversations/${id}/stats`);
+      setCollaborationStats(stats);
+    } catch (error) {
+      // Collaboration stats are optional, don't show error to user
+      console.error('Error fetching collaboration stats:', error);
+    }
+  };
+
+  const handleSuggestionApplied = (suggestion: any) => {
+    // When a suggestion is accepted, we could potentially update the conversation
+    // For now, just refresh the stats
+    fetchCollaborationStats();
   };
 
   const handleSaveEdit = async () => {
@@ -184,38 +208,73 @@ export default function ChatPage() {
               </div>
             )}
           </div>
-          {isOwner && (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
-                <Settings className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleToggleVisibility}>
-                {conversation.is_public ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleArchive}>
-                <Archive className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            {/* Bookmark button for authenticated users */}
+            {user && (
+              <BookmarkButton 
+                conversationId={conversation.id}
+                size="sm"
+              />
+            )}
+            
+            {/* Owner controls */}
+            {isOwner && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleToggleVisibility}>
+                  {conversation.is_public ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleArchive}>
+                  <Archive className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Chat Interface */}
-        <Card className="h-[600px]">
-          <ChatInterface 
-            conversationId={conversation.id.toString()}
-            initialMessages={conversation.messages || []}
-            onNewMessage={() => {
-              // Message count will be updated by WebSocket, no need to refetch
-            }}
-            onTitleUpdate={(newTitle) => {
-              // Update conversation title when received via WebSocket
-              if (conversation) {
-                setConversation({ ...conversation, title: newTitle });
-                setEditTitle(newTitle);
-              }
-            }}
-          />
+        <Card className="h-[600px] overflow-hidden">
+          {/* Collaboration Toolbar */}
+          {user && (
+            <CollaborationToolbar
+              conversationId={conversation.id}
+              isOwner={isOwner}
+              isPublic={conversation.is_public}
+              stats={collaborationStats}
+              onSuggestionApplied={handleSuggestionApplied}
+              onStatsUpdate={fetchCollaborationStats}
+            />
+          )}
+          
+          <div className={user ? "h-[calc(100%-49px)]" : "h-full"}>
+            <ChatInterface 
+              conversationId={conversation.id.toString()}
+              initialMessages={conversation.messages || []}
+              onNewMessage={() => {
+                // Message count will be updated by WebSocket, no need to refetch
+              }}
+              onTitleUpdate={(newTitle) => {
+                // Update conversation title when received via WebSocket
+                if (conversation) {
+                  setConversation({ ...conversation, title: newTitle });
+                  setEditTitle(newTitle);
+                }
+              }}
+            />
+          </div>
         </Card>
+
+        {/* Human Chat Panel */}
+        {user && conversation && (
+          <HumanChatPanel
+            conversationId={conversation.id}
+            currentUserId={user.id}
+            isOpen={isChatOpen}
+            onToggle={() => setIsChatOpen(!isChatOpen)}
+          />
+        )}
       </div>
     </div>
   );

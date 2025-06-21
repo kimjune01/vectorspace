@@ -79,6 +79,7 @@ async def conversation_websocket(
 ):
     """WebSocket endpoint for real-time conversation communication."""
     connection_id = None
+    user = None
     
     try:
         # Authenticate user

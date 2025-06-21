@@ -90,6 +90,8 @@ class AIService:
             
         except Exception as e:
             logger.error(f"Error in AI streaming: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Error details: {str(e)}")
             yield {
                 "content": "I'm sorry, I encountered an error while processing your request.",
                 "finish_reason": "stop",
@@ -166,6 +168,8 @@ class AIService:
             
         except Exception as e:
             logger.error(f"OpenAI API error: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Error details: {str(e)}")
             yield {
                 "content": "I encountered an error while communicating with the AI service.",
                 "finish_reason": "stop",

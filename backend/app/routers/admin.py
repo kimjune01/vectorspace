@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from typing import Dict, List, Optional
 import time
+import os
 from app.services.websocket_manager import websocket_manager
 from app.services.presence_manager import presence_manager
 from app.services.heartbeat_manager import get_heartbeat_manager
@@ -121,4 +122,25 @@ async def detailed_health_check() -> Dict:
             }
         },
         "timestamp": time.time()
+    }
+
+
+@router.get("/ai/config")
+async def get_ai_config() -> Dict:
+    """Get AI service configuration for debugging."""
+    from app.services.ai_service import ai_service
+    
+    return {
+        "api_key_configured": bool(os.getenv("OPENAI_API_KEY")),
+        "api_key_length": len(os.getenv("OPENAI_API_KEY", "")) if os.getenv("OPENAI_API_KEY") else 0,
+        "api_key_prefix": os.getenv("OPENAI_API_KEY", "")[:8] + "..." if os.getenv("OPENAI_API_KEY") else None,
+        "model": ai_service.model,
+        "max_tokens": ai_service.max_tokens,
+        "temperature": ai_service.temperature,
+        "client_configured": ai_service.client is not None,
+        "environment_vars": {
+            "AI_MODEL": os.getenv("AI_MODEL"),
+            "AI_MAX_TOKENS": os.getenv("AI_MAX_TOKENS"),
+            "AI_TEMPERATURE": os.getenv("AI_TEMPERATURE")
+        }
     }

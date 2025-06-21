@@ -144,3 +144,27 @@ async def get_ai_config() -> Dict:
             "AI_TEMPERATURE": os.getenv("AI_TEMPERATURE")
         }
     }
+
+
+@router.get("/ai/test")
+async def test_ai_connection() -> Dict:
+    """Test OpenAI API connection."""
+    from app.services.ai_service import ai_service
+    
+    if not ai_service.client:
+        return {"error": "OpenAI client not configured", "using_mock": True}
+    
+    try:
+        # Simple API test - list models
+        models = await ai_service.client.models.list()
+        return {
+            "success": True,
+            "models_available": len(models.data),
+            "first_model": models.data[0].id if models.data else None
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": type(e).__name__
+        }

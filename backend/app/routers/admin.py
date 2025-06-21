@@ -177,3 +177,43 @@ async def test_ai_connection() -> Dict:
             "error_type": type(e).__name__,
             "api_key_debug": key_info
         }
+
+
+@router.get("/users/debug")
+async def debug_users() -> Dict:
+    """Debug user data in production database."""
+    from app.database import get_db
+    from app.models import User
+    from sqlalchemy import select
+    
+    async for db in get_db():
+        try:
+            # Get all users with basic info
+            result = await db.execute(select(User.username, User.email, User.display_name, User.created_at, User.password_hash).limit(10))
+            users = result.all()
+            
+            user_data = []
+            for user in users:
+                user_data.append({
+                    "username": user.username,
+                    "email": user.email,
+                    "display_name": user.display_name,
+                    "created_at": str(user.created_at),
+                    "has_password": bool(user.password_hash),
+                    "password_prefix": user.password_hash[:20] + "..." if user.password_hash else None
+                })
+            
+            return {
+                "success": True,
+                "total_users": len(users),
+                "users": user_data
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": type(e).__name__
+            }
+        finally:
+            break

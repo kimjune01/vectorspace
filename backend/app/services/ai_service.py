@@ -21,7 +21,12 @@ class AIService:
             self.client = None
             self.model = "mock-ai-model"
         else:
-            self.client = AsyncOpenAI(api_key=self.api_key)
+            # Configure client with longer timeouts for Railway
+            self.client = AsyncOpenAI(
+                api_key=self.api_key,
+                timeout=60.0,  # Increase timeout for Railway networking
+                max_retries=3  # Add retries for connection issues
+            )
             self.model = os.getenv("AI_MODEL", "gpt-4o-mini")
         
         self.max_tokens = int(os.getenv("AI_MAX_TOKENS", "4000"))
@@ -54,39 +59,45 @@ class AIService:
             
             # Use real OpenAI API if available, otherwise fall back to mock
             if self.client:
-                async for chunk in self._stream_openai_response(messages):
-                    yield chunk
-            else:
-                # Fall back to mock response
-                user_message = messages[-1]["content"]
-                response_text = await self._generate_mock_response(user_message)
-                
-                # Stream the mock response in chunks
-                chunk_size = 8  # Characters per chunk
-                total_tokens = 0
-                
-                for i in range(0, len(response_text), chunk_size):
-                    chunk = response_text[i:i + chunk_size]
-                    chunk_tokens = max(1, len(chunk) // 4)  # Approximate token count
-                    total_tokens += chunk_tokens
-                    
-                    # Add natural delay to simulate streaming (skip in tests)
-                    if not os.getenv("TESTING"):
-                        await asyncio.sleep(0.1)
-                    
-                    yield {
-                        "content": chunk,
-                        "finish_reason": None,
-                        "tokens": chunk_tokens
-                    }
+                try:
+                    async for chunk in self._stream_openai_response(messages):
+                        yield chunk
+                    return  # Success, exit early
+                except Exception as openai_error:
+                    logger.warning(f"OpenAI API failed, falling back to mock mode: {openai_error}")
+                    # Fall through to mock mode
             
-                # Final chunk with completion signal for mock mode
+            # Mock mode (either no client or OpenAI failed)
+            # Fall back to mock response
+            user_message = messages[-1]["content"]
+            response_text = await self._generate_mock_response(user_message)
+            
+            # Stream the mock response in chunks
+            chunk_size = 8  # Characters per chunk
+            total_tokens = 0
+            
+            for i in range(0, len(response_text), chunk_size):
+                chunk = response_text[i:i + chunk_size]
+                chunk_tokens = max(1, len(chunk) // 4)  # Approximate token count
+                total_tokens += chunk_tokens
+                
+                # Add natural delay to simulate streaming (skip in tests)
+                if not os.getenv("TESTING"):
+                    await asyncio.sleep(0.1)
+                
                 yield {
-                    "content": "",
-                    "finish_reason": "stop", 
-                    "tokens": 0,
-                    "total_tokens": total_tokens
+                    "content": chunk,
+                    "finish_reason": None,
+                    "tokens": chunk_tokens
                 }
+        
+            # Final chunk with completion signal for mock mode
+            yield {
+                "content": "",
+                "finish_reason": "stop", 
+                "tokens": 0,
+                "total_tokens": total_tokens
+            }
             
         except Exception as e:
             logger.error(f"Error in AI streaming: {e}")

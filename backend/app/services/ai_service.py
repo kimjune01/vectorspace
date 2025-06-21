@@ -21,11 +21,18 @@ class AIService:
             self.client = None
             self.model = "mock-ai-model"
         else:
-            # Configure client with longer timeouts for Railway
+            # Configure client with Railway-optimized settings
+            import httpx
+            http_client = httpx.AsyncClient(
+                timeout=60.0,
+                limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+                verify=True  # Ensure SSL verification
+            )
             self.client = AsyncOpenAI(
                 api_key=self.api_key,
                 timeout=60.0,  # Increase timeout for Railway networking
-                max_retries=3  # Add retries for connection issues
+                max_retries=3,  # Add retries for connection issues
+                http_client=http_client
             )
             self.model = os.getenv("AI_MODEL", "gpt-4o-mini")
         

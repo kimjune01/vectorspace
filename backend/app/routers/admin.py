@@ -163,8 +163,17 @@ async def test_ai_connection() -> Dict:
             "first_model": models.data[0].id if models.data else None
         }
     except Exception as e:
+        # Get API key for debugging
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        key_info = {
+            "first_8": api_key[:8] if len(api_key) >= 8 else api_key,
+            "last_8": api_key[-8:] if len(api_key) >= 8 else api_key,
+            "length": len(api_key)
+        }
+        
         return {
             "success": False,
             "error": str(e),
-            "error_type": type(e).__name__
+            "error_type": type(e).__name__,
+            "api_key_debug": key_info
         }

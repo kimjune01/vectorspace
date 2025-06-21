@@ -222,6 +222,8 @@ async def handle_websocket_message(
         await handle_typing_indicator(connection_id, user, conversation_id, message_data)
     elif message_type == "ping":
         await handle_ping(connection_id)
+    elif message_type == "pong":
+        await handle_pong(connection_id, message_data)
     elif message_type == "request_message_history":
         await handle_message_history_request(connection_id, user, conversation_id, message_data, db)
     elif message_type == "mark_messages_read":
@@ -390,6 +392,13 @@ async def handle_ping(connection_id: str):
     await websocket_manager.send_to_connection(connection_id, {
         "type": "pong"
     })
+
+
+async def handle_pong(connection_id: str, message_data: dict):
+    """Handle pong response from client."""
+    from app.services.heartbeat_manager import get_heartbeat_manager
+    heartbeat_manager = get_heartbeat_manager(websocket_manager)
+    heartbeat_manager.handle_pong(connection_id)
 
 
 async def handle_ai_response(connection_id: str, conversation_id: int, user_message_id: int, db: AsyncSession):

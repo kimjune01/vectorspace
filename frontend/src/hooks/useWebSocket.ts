@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 export interface WebSocketMessage {
-  type: 'message' | 'user_message' | 'ai_message' | 'error' | 'conversation_archived' | 'presence_update' | 'connection_established' | 'scroll_update' | 'title_updated';
+  type: 'message' | 'user_message' | 'ai_message' | 'error' | 'conversation_archived' | 'presence_update' | 'connection_established' | 'scroll_update' | 'title_updated' | 'ping' | 'pong';
   content?: string;
   user_id?: number;
   username?: string;
@@ -63,6 +63,16 @@ export function useWebSocket(url: string | null, options: UseWebSocketOptions = 
       ws.onmessage = (event) => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
+          
+          // Handle ping messages by responding with pong
+          if (message.type === 'ping') {
+            ws.send(JSON.stringify({
+              type: 'pong',
+              timestamp: message.timestamp
+            }));
+            return; // Don't pass ping messages to the application
+          }
+          
           onMessage?.(message);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);

@@ -56,8 +56,12 @@ class HeartbeatManager:
         
         for connection_id, connection in connections_to_ping:
             try:
-                # Send WebSocket ping frame
-                await connection.websocket.ping()
+                # FastAPI WebSocket doesn't have ping() method
+                # Instead, send a simple JSON ping message
+                await connection.websocket.send_json({
+                    "type": "ping",
+                    "timestamp": current_time
+                })
                 self.pending_pongs[connection_id] = current_time
                 logger.debug(f"Sent ping to connection {connection_id}")
             except Exception as e:

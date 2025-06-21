@@ -28,8 +28,11 @@ class AIService:
                 limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
                 verify=True  # Ensure SSL verification
             )
+            # Use proxy if configured, otherwise direct OpenAI
+            base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
             self.client = AsyncOpenAI(
                 api_key=self.api_key,
+                base_url=base_url,
                 timeout=60.0,  # Increase timeout for Railway networking
                 max_retries=3,  # Add retries for connection issues
                 http_client=http_client

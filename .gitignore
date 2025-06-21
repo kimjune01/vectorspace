@@ -127,6 +127,10 @@ backend/conversations.db*
 backend/chroma_db/
 backend/chroma/
 
+# Corpus microservice database
+corpus/chroma_db/
+corpus/chroma/
+
 # Database dumps
 backend/*.sql
 backend/*.dump

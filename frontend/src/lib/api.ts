@@ -526,34 +526,3 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient();
-
-// Simple API wrapper for components - maintains compatibility with existing patterns
-export const api = {
-  get: async (endpoint: string) => {
-    const response = await apiClient.request(endpoint);
-    return { data: response };
-  },
-  
-  post: async (endpoint: string, data?: any) => {
-    const response = await apiClient.request(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-    return { data: response };
-  },
-  
-  put: async (endpoint: string, data?: any) => {
-    const response = await apiClient.request(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-    return { data: response };
-  },
-  
-  delete: async (endpoint: string) => {
-    const response = await apiClient.request(endpoint, {
-      method: 'DELETE',
-    });
-    return { data: response };
-  },
-};

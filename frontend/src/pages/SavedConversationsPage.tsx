@@ -81,7 +81,7 @@ export default function SavedConversationsPage() {
         currentPage, 
         20, 
         selectedTag || undefined
-      );
+      ) as any;
       setSavedConversations(response.saved_conversations || []);
       setTotalPages(Math.ceil((response.total || 0) / 20));
     } catch (error) {
@@ -94,7 +94,7 @@ export default function SavedConversationsPage() {
 
   const fetchCollections = async () => {
     try {
-      const response = await apiClient.getMyCollections(1, 50);
+      const response = await apiClient.getMyCollections(1, 50) as any;
       setCollections(response.collections || []);
     } catch (error) {
       console.error('Error fetching collections:', error);

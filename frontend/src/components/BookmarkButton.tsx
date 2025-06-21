@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api';
 import type { BookmarkButtonProps } from '@/types/social';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 
@@ -9,7 +9,7 @@ export function BookmarkButton({
   conversationId,
   initialIsSaved = false,
   onSaveChange,
-  size = 'default'
+  size = 'sm'
 }: BookmarkButtonProps) {
   const [isSaved, setIsSaved] = useState(initialIsSaved);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,8 +25,8 @@ export function BookmarkButton({
 
   const checkSavedStatus = async () => {
     try {
-      const response = await api.get(`/curation/saved/check/${conversationId}`);
-      setIsSaved(response.data.is_saved);
+      const response = await apiClient.request(`/curation/saved/check/${conversationId}`) as any;
+      setIsSaved(response.is_saved);
       setHasCheckedStatus(true);
     } catch (error) {
       console.error('Failed to check saved status:', error);
@@ -37,7 +37,7 @@ export function BookmarkButton({
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      await api.post(`/curation/conversations/${conversationId}/save`);
+      await apiClient.request(`/curation/conversations/${conversationId}/save`, { method: 'POST' });
       setIsSaved(true);
       onSaveChange?.(true);
       
@@ -60,7 +60,7 @@ export function BookmarkButton({
   const handleUnsave = async () => {
     setIsLoading(true);
     try {
-      await api.delete(`/curation/conversations/${conversationId}/save`);
+      await apiClient.request(`/curation/conversations/${conversationId}/save`, { method: 'DELETE' });
       setIsSaved(false);
       onSaveChange?.(false);
       

@@ -238,6 +238,15 @@ export interface NotificationListResponse {
   has_prev: boolean;
 }
 
+export interface PaginatedNotifications {
+  notifications: Notification[];
+  total: number;
+  page: number;
+  per_page: number;
+  has_next: boolean;
+  has_prev: boolean;
+}
+
 export interface NotificationStatsResponse {
   unread_count: number;
   total_count: number;

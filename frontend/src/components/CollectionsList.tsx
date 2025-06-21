@@ -1,32 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
-import type { Collection, SavedConversation } from '@/types/social';
+import { apiClient } from '@/lib/api';
+import type { Collection } from '@/types/social';
 import { Plus, BookOpen, Lock, Globe, Calendar } from 'lucide-react';
 
 interface CollectionsListProps {
+  collections?: Collection[];
   onCreateCollection?: () => void;
   onCollectionClick?: (collection: Collection) => void;
+  onUpdate?: () => Promise<void>;
 }
 
-export function CollectionsList({ onCreateCollection, onCollectionClick }: CollectionsListProps) {
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function CollectionsList({ collections: propCollections, onCreateCollection, onCollectionClick, onUpdate }: CollectionsListProps) {
+  const [collections, setCollections] = useState<Collection[]>(propCollections || []);
+  const [isLoading, setIsLoading] = useState(!propCollections);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadCollections();
-  }, []);
+    if (propCollections) {
+      setCollections(propCollections);
+      setIsLoading(false);
+    } else {
+      loadCollections();
+    }
+  }, [propCollections]);
 
   const loadCollections = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get('/curation/collections');
-      setCollections(response.data.collections || []);
+      const response = await apiClient.request('/curation/collections') as any;
+      setCollections(response.collections || []);
       setError(null);
     } catch (error: any) {
       const message = error.response?.data?.detail || 'Failed to load collections';
@@ -117,9 +124,9 @@ export function CollectionsList({ onCreateCollection, onCollectionClick }: Colle
                   <CardTitle className="text-lg line-clamp-2">{collection.name}</CardTitle>
                   <div className="flex items-center gap-1 mt-1">
                     {collection.is_public ? (
-                      <Globe className="h-4 w-4 text-blue-500" title="Public" />
+                      <Globe className="h-4 w-4 text-blue-500" />
                     ) : (
-                      <Lock className="h-4 w-4 text-gray-500" title="Private" />
+                      <Lock className="h-4 w-4 text-gray-500" />
                     )}
                   </div>
                 </div>

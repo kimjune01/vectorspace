@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api';
 import type { HumanMessage, HumanChatRoomInfo } from '@/types/social';
 import { Send, Users, MessageCircle, X } from 'lucide-react';
 
@@ -154,8 +154,9 @@ export function HumanChatPanel({
 
     setIsLoading(true);
     try {
-      const response = await api.post(`/human-chat/conversations/${conversationId}/messages`, {
-        content: newMessage.trim()
+      await apiClient.request(`/human-chat/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ content: newMessage.trim() })
       });
       
       // Message will be added via WebSocket, so just clear the input

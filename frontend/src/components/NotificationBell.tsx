@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -37,7 +37,7 @@ export function NotificationBell() {
   const fetchStats = async () => {
     try {
       const response = await apiClient.getNotificationStats();
-      setStats(response);
+      setStats(response as NotificationStatsResponse);
     } catch (error) {
       console.error('Failed to fetch notification stats:', error);
     }
@@ -46,7 +46,7 @@ export function NotificationBell() {
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
-      const response: NotificationListResponse = await apiClient.getNotifications(1, 10);
+      const response = await apiClient.getNotifications(1, 10) as NotificationListResponse;
       setNotifications(response.notifications);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);

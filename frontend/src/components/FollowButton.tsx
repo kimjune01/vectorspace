@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api';
 import type { FollowButtonProps } from '@/types/social';
 
 export function FollowButton({
   targetUserId,
   initialIsFollowing = false,
   onFollowChange,
-  size = 'default',
+  size = 'sm',
   variant = 'default'
 }: FollowButtonProps) {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
@@ -37,7 +37,7 @@ export function FollowButton({
   const handleFollow = async () => {
     setIsLoading(true);
     try {
-      await api.post(`/users/${targetUserId}/follow`);
+      await apiClient.request(`/users/${targetUserId}/follow`, { method: 'POST' });
       setIsFollowing(true);
       onFollowChange?.(true);
       
@@ -60,7 +60,7 @@ export function FollowButton({
   const handleUnfollow = async () => {
     setIsLoading(true);
     try {
-      await api.delete(`/users/${targetUserId}/follow`);
+      await apiClient.request(`/users/${targetUserId}/follow`, { method: 'DELETE' });
       setIsFollowing(false);
       onFollowChange?.(false);
       

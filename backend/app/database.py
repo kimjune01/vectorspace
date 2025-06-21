@@ -1,43 +1,42 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
-from sqlalchemy.pool import NullPool, QueuePool
 import os
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Database URL
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./conversations.db")
+# Require PostgreSQL - no SQLite fallback
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Determine if we're using PostgreSQL
-is_postgres = DATABASE_URL.startswith(("postgresql://", "postgresql+asyncpg://"))
+if not DATABASE_URL:
+    raise ValueError(
+        "DATABASE_URL environment variable is required. "
+        "Please provide a PostgreSQL connection string."
+    )
 
 # Convert Railway's postgres:// to postgresql+asyncpg:// for async support
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
     logger.info("Converted postgres:// URL to postgresql+asyncpg:// for async support")
 
-# Create async engine with appropriate settings
-if is_postgres:
-    # PostgreSQL production settings
-    engine = create_async_engine(
-        DATABASE_URL,
-        echo=True if os.getenv("DEBUG") and not os.getenv("TESTING") else False,
-        poolclass=QueuePool,
-        pool_size=10,
-        max_overflow=20,
-        pool_recycle=3600,  # Recycle connections after 1 hour
-        pool_pre_ping=True,  # Validate connections before use
+# Validate that we're using PostgreSQL
+if not DATABASE_URL.startswith(("postgresql://", "postgresql+asyncpg://")):
+    raise ValueError(
+        f"Only PostgreSQL databases are supported. "
+        f"DATABASE_URL must start with 'postgresql://' or 'postgresql+asyncpg://'. "
+        f"Got: {DATABASE_URL[:30]}..."
     )
-    logger.info("Database engine configured for PostgreSQL")
-else:
-    # SQLite development settings
-    engine = create_async_engine(
-        DATABASE_URL,
-        echo=True if os.getenv("DEBUG") and not os.getenv("TESTING") else False,
-        poolclass=NullPool,
-    )
-    logger.info("Database engine configured for SQLite")
+
+# Create async engine with PostgreSQL-optimized settings
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=True if os.getenv("DEBUG") and not os.getenv("TESTING") else False,
+    pool_size=10,
+    max_overflow=20,
+    pool_recycle=3600,  # Recycle connections after 1 hour
+    pool_pre_ping=True,  # Validate connections before use
+)
+logger.info("Database engine configured for PostgreSQL")
 
 # Create async session factory
 async_session = sessionmaker(

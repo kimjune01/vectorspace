@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 export interface WebSocketMessage {
-  type: 'message' | 'user_message' | 'ai_message' | 'error' | 'conversation_archived' | 'presence_update' | 'connection_established' | 'scroll_update' | 'title_updated' | 'ping' | 'pong';
+  type: 'message' | 'new_message' | 'ai_response_chunk' | 'ai_response_complete' | 'ai_response_error' | 'error' | 'conversation_archived' | 'presence_update' | 'connection_established' | 'scroll_update' | 'title_updated' | 'ping' | 'pong';
   content?: string;
   user_id?: number;
   username?: string;
@@ -14,7 +14,18 @@ export interface WebSocketMessage {
   current_message_index?: number;
   current_message_id?: string;
   new_title?: string;
-  message?: string;
+  message?: {
+    id: number;
+    conversation_id: number;
+    from_user_id?: number;
+    from_user_username?: string;
+    from_user_display_name?: string;
+    role: string;
+    message_type: string;
+    content: string;
+    parent_message_id?: number;
+    timestamp: string;
+  };
 }
 
 export interface UseWebSocketOptions {

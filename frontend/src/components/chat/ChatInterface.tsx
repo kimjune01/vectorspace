@@ -42,31 +42,43 @@ export function ChatInterface({ conversationId, initialMessages = [], onNewMessa
   });
 
   const handleWebSocketMessage = (wsMessage: WebSocketMessage) => {
-    if (wsMessage.type === 'user_message' || wsMessage.type === 'ai_message') {
-      const message: Message = {
-        id: parseInt(wsMessage.message_id || Date.now().toString()),
-        conversation_id: parseInt(conversationId),
-        from_user_id: wsMessage.user_id || undefined,
-        from_user_username: wsMessage.username,
-        from_user_display_name: wsMessage.display_name,
-        role: wsMessage.type === 'user_message' ? 'user' : 'assistant',
-        message_type: 'chat',
-        content: wsMessage.content || '',
-        token_count: 0,
-        parent_message_id: undefined,
-        timestamp: typeof wsMessage.timestamp === 'string' ? wsMessage.timestamp : new Date().toISOString(),
-      };
-      
-      setMessages(prev => {
-        // Check if message already exists to prevent duplicates
-        const exists = prev.some(m => m.id === message.id);
-        if (exists) return prev;
-        return [...prev, message];
-      });
-      onNewMessage?.(message);
+    if (wsMessage.type === 'new_message') {
+      const msgData = wsMessage.message;
+      if (msgData) {
+        const message: Message = {
+          id: msgData.id,
+          conversation_id: msgData.conversation_id,
+          from_user_id: msgData.from_user_id || undefined,
+          from_user_username: msgData.from_user_username,
+          from_user_display_name: msgData.from_user_display_name,
+          role: msgData.role,
+          message_type: msgData.message_type,
+          content: msgData.content,
+          token_count: 0,
+          parent_message_id: msgData.parent_message_id,
+          timestamp: msgData.timestamp,
+        };
+        
+        setMessages(prev => {
+          // Check if message already exists to prevent duplicates
+          const exists = prev.some(m => m.id === message.id);
+          if (exists) return prev;
+          return [...prev, message];
+        });
+        onNewMessage?.(message);
+        
+        // If this was a user message, set loading for AI response
+        if (msgData.role === 'user') {
+          setIsLoading(true);
+        }
+      }
     }
     
-    if (wsMessage.type === 'ai_message') {
+    if (wsMessage.type === 'ai_response_complete') {
+      setIsLoading(false);
+    }
+    
+    if (wsMessage.type === 'ai_response_error') {
       setIsLoading(false);
     }
     
@@ -87,7 +99,7 @@ export function ChatInterface({ conversationId, initialMessages = [], onNewMessa
 
     setIsLoading(true);
     const success = sendMessage({
-      type: 'user_message',
+      type: 'send_message',
       content: newMessage,
     });
 

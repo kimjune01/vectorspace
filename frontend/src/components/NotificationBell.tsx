@@ -11,7 +11,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
-import { Notification, NotificationStatsResponse, NotificationListResponse } from '@/types/social';
+import type { Notification, NotificationStatsResponse, NotificationListResponse } from '@/types/social';
 import { Bell, Check, User, MessageSquare, Users } from 'lucide-react';
 
 export function NotificationBell() {

@@ -170,7 +170,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Info */}
-        <Card className="mb-6">
+        <Card className="mb-6" data-testid="profile-info">
           <CardContent className="p-6">
             <div className="flex items-start gap-6">
               <Avatar className="h-20 w-20">
@@ -181,7 +181,7 @@ export default function ProfilePage() {
               </Avatar>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-2xl font-bold">{profile.display_name}</h2>
+                  <h2 className="text-2xl font-bold" data-testid="profile-display-name">{profile.display_name}</h2>
                   {isOwnProfile ? (
                     <Button variant="outline" size="sm">
                       <Settings className="h-4 w-4 mr-2" />
@@ -207,6 +207,7 @@ export default function ProfilePage() {
                     <Calendar className="h-4 w-4" />
                     <span>Joined {formatDate(profile.created_at)}</span>
                   </div>
+                  <span data-testid="profile-username">@{profile.username}</span>
                 </div>
                 {profile.bio && (
                   <p className="text-muted-foreground mb-4">{profile.bio}</p>

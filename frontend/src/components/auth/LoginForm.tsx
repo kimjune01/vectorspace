@@ -47,6 +47,7 @@ export function LoginForm() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              data-testid="login-username-input"
             />
           </div>
           <div className="space-y-2">
@@ -58,6 +59,7 @@ export function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              data-testid="login-password-input"
             />
           </div>
           {error && (
@@ -69,6 +71,7 @@ export function LoginForm() {
             type="submit" 
             className="w-full"
             disabled={isLoading}
+            data-testid="login-submit-button"
           >
             {isLoading ? 'Signing in...' : 'Sign in'}
           </Button>

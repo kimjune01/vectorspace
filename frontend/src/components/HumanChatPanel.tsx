@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
-import { HumanMessage, HumanChatRoomInfo } from '@/types/social';
+import type { HumanMessage, HumanChatRoomInfo } from '@/types/social';
 import { Send, Users, MessageCircle, X } from 'lucide-react';
 
 interface HumanChatPanelProps {

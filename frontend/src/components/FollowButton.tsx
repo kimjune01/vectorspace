@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
-import { FollowButtonProps } from '@/types/social';
+import type { FollowButtonProps } from '@/types/social';
 
 export function FollowButton({
   targetUserId,

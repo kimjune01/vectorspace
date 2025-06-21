@@ -87,7 +87,7 @@ export default function Navigation() {
                 <NotificationBell />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="px-2">
+                    <Button variant="ghost" size="sm" className="px-2" data-testid="user-menu-button">
                       <Settings className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -108,7 +108,7 @@ export default function Navigation() {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <Link to="/login">
+                <Link to="/login" data-testid="login-link">
                   <Button variant="ghost" size="sm" className="flex items-center space-x-1">
                     <LogOut className="h-4 w-4" />
                     <span>Sign In</span>

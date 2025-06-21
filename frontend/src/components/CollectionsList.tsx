@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
-import { Collection, SavedConversation } from '@/types/social';
+import type { Collection, SavedConversation } from '@/types/social';
 import { Plus, BookOpen, Lock, Globe, Calendar } from 'lucide-react';
 
 interface CollectionsListProps {

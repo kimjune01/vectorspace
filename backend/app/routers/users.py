@@ -9,31 +9,11 @@ from app.schemas.social import (
     FollowCreate, FollowResponse, UserFollowStats, 
     FollowerResponse, PaginatedFollowersResponse, PaginatedFollowingResponse
 )
-from pydantic import BaseModel
+from app.schemas.user import UserProfileResponse, UpdateProfileRequest
 import logging
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-class UserProfileResponse(BaseModel):
-    """Response model for user profile."""
-    username: str
-    display_name: str
-    bio: Optional[str]
-    profile_image_url: Optional[str]
-    profile_image_data: Optional[str]  # Base64 encoded thumbnail
-    stripe_pattern_seed: int
-    conversation_count: int
-    conversations_last_24h: int
-    created_at: str
-    recent_conversations: List[dict]
-
-
-class UpdateProfileRequest(BaseModel):
-    """Request model for updating user profile."""
-    bio: Optional[str] = None
-    display_name: Optional[str] = None
 
 
 @router.get("/profile/{username}")

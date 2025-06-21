@@ -1,6 +1,6 @@
 // API Response Types - Prevents data structure mismatches
 
-export interface PaginatedResponse<T = any> {
+export interface PaginatedResponse<T = unknown> {
   data: T;
   total: number;
   page: number;
@@ -360,7 +360,11 @@ import type {
 export interface CorpusHealthResponse {
   status: string;
   corpus_service: string;
-  collections: Record<string, any>;
+  collections: Record<string, {
+    name: string;
+    document_count: number;
+    last_updated?: string;
+  }>;
   error?: string;
 }
 
@@ -383,7 +387,7 @@ export interface CorpusSearchResult {
   score?: number;
   comment_count?: number;
   similarity_score: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean>;
 }
 
 export interface CorpusSearchRequest {
@@ -434,10 +438,14 @@ export interface CorpusDebugStatus {
     current_user: string;
   };
   collections?: string[];
-  corpus_debug?: any;
+  corpus_debug?: {
+    status: string;
+    collections?: string[];
+    error?: string;
+  };
   corpus_api_error?: {
     error: string;
-    details: Record<string, any>;
+    details: Record<string, string | number | boolean>;
   };
 }
 

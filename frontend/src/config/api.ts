@@ -11,7 +11,9 @@
 export const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE_URL || '/api',
   CORPUS_BASE_URL: '/api/corpus',
-  WEBSOCKET_URL: import.meta.env.VITE_WS_URL || 'ws://localhost:8000/api/ws',
+  WEBSOCKET_URL: import.meta.env.VITE_WS_URL || (import.meta.env.PROD && import.meta.env.VITE_API_URL 
+    ? import.meta.env.VITE_API_URL.replace('https://', 'wss://').replace('http://', 'ws://') + '/api/ws'
+    : 'ws://localhost:8000/api/ws'),
   
   // Request timeouts (in milliseconds)
   TIMEOUT: {

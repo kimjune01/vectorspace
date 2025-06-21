@@ -515,12 +515,25 @@ export class ApiClient {
 
   // WebSocket URL helper
   getWebSocketUrl(conversationId: string): string {
-    // Get WebSocket URL from environment or default to backend
-    const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000/api/ws';
-    
     if (!this.token) {
       throw new Error('Authentication token required for WebSocket connection');
     }
+    
+    // Get WebSocket URL from environment or derive from API base URL
+    let wsBaseUrl = import.meta.env.VITE_WS_BASE_URL;
+    
+    if (!wsBaseUrl) {
+      // Derive WebSocket URL from API base URL
+      if (import.meta.env.PROD && import.meta.env.VITE_API_URL) {
+        // In production, use the API URL and convert to WebSocket
+        const apiUrl = import.meta.env.VITE_API_URL;
+        wsBaseUrl = apiUrl.replace('https://', 'wss://').replace('http://', 'ws://') + '/api/ws';
+      } else {
+        // In development, use localhost
+        wsBaseUrl = 'ws://localhost:8000/api/ws';
+      }
+    }
+    
     return `${wsBaseUrl}/conversations/${conversationId}?token=${encodeURIComponent(this.token)}`;
   }
 }

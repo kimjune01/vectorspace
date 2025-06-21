@@ -25,8 +25,8 @@ export function FollowButton({
 
   const checkFollowStatus = async () => {
     try {
-      const response = await api.get(`/users/me/is-following/${targetUserId}`);
-      setIsFollowing(response.data.is_following);
+      const response = await apiClient.request(`/users/me/is-following/${targetUserId}`) as any;
+      setIsFollowing(response.is_following);
       setHasCheckedStatus(true);
     } catch (error) {
       console.error('Failed to check follow status:', error);

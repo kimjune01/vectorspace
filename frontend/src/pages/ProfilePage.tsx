@@ -73,7 +73,7 @@ export default function ProfilePage() {
     );
     
     if (stats) {
-      setFollowStats(stats);
+      setFollowStats(stats as any);
     }
   };
 

@@ -348,7 +348,7 @@ export interface FollowButtonProps {
   targetUserId: number;
   initialIsFollowing?: boolean;
   onFollowChange?: (isFollowing: boolean) => void;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
   variant?: 'default' | 'outline';
 }
 
@@ -356,7 +356,7 @@ export interface BookmarkButtonProps {
   conversationId: number;
   initialIsSaved?: boolean;
   onSaveChange?: (isSaved: boolean) => void;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
 export interface HumanChatPanelProps {

@@ -55,8 +55,8 @@ export function HumanChatPanel({
 
   const loadChatInfo = async () => {
     try {
-      const response = await api.get(`/human-chat/conversations/${conversationId}/chat-info`);
-      const chatInfo: HumanChatRoomInfo = response.data;
+      const response = await apiClient.request(`/human-chat/conversations/${conversationId}/chat-info`) as any;
+      const chatInfo: HumanChatRoomInfo = response;
       
       setMessages(chatInfo.recent_messages);
       setOnlineUsers(chatInfo.online_users);
@@ -180,7 +180,7 @@ export function HumanChatPanel({
 
   const deleteMessage = async (messageId: number) => {
     try {
-      await api.delete(`/human-chat/conversations/${conversationId}/messages/${messageId}`);
+      await apiClient.request(`/human-chat/conversations/${conversationId}/messages/${messageId}`, { method: 'DELETE' });
       
       toast({
         title: "Message deleted",

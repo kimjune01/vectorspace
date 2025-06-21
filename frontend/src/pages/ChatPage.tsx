@@ -240,7 +240,7 @@ export default function ChatPage() {
           {user && (
             <CollaborationToolbar
               conversationId={conversation.id}
-              isOwner={isOwner}
+              isOwner={!!isOwner}
               isPublic={conversation.is_public}
               stats={collaborationStats}
               onSuggestionApplied={handleSuggestionApplied}

@@ -71,7 +71,7 @@ export function CollaborationInvitePanel({
     try {
       setIsLoading(true);
       const response = await apiClient.request('/collaboration/my-invitations?pending_only=true');
-      setMyInvitations(response || []);
+      setMyInvitations(response as any || []);
     } catch (error) {
       console.error('Error fetching invitations:', error);
     } finally {

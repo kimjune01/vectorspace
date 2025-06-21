@@ -229,7 +229,7 @@ export default function SavedConversationsPage() {
               <CardTitle>My Collections</CardTitle>
             </CardHeader>
             <CardContent>
-              <CollectionsList collections={collections} onUpdate={fetchCollections} />
+              <CollectionsList collections={collections as any} onUpdate={fetchCollections} />
             </CardContent>
           </Card>
         )}

@@ -88,7 +88,7 @@ export default function EnhancedSidebar({
               key={`${currentConversation?.id}-${lastUpdateTime}`} // Force re-render on updates
             >
               <EnhancedDiscoverySidebar
-                currentConversation={currentConversation}
+                currentConversation={currentConversation || null}
                 onConversationSelect={onConversationSelect || (() => {})}
                 onNewChat={onNewChat}
               />

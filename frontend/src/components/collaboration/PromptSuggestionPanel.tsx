@@ -77,7 +77,7 @@ export function PromptSuggestionPanel({
       }
       
       const response = await apiClient.request(`/collaboration/conversations/${conversationId}/suggestions?${params}`);
-      setSuggestions(response || []);
+      setSuggestions(response as any || []);
     } catch (error) {
       setError('Failed to load suggestions');
       console.error('Error fetching suggestions:', error);
@@ -95,7 +95,7 @@ export function PromptSuggestionPanel({
         body: JSON.stringify(newSuggestion),
       });
 
-      setSuggestions(prev => [response, ...prev]);
+      setSuggestions(prev => [response as any, ...prev]);
       setNewSuggestion({ suggested_prompt: '', reasoning: '', target_position: 0 });
       setShowCreateForm(false);
     } catch (error) {

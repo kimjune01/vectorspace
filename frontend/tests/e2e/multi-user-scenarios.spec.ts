@@ -48,7 +48,7 @@ test.describe('Multi-User Concurrent Scenarios', () => {
 
       // Test concurrent scroll tracking
       for (let i = 1; i < pages.length; i++) {
-        await pages[i].evaluate((scrollPosition) => {
+        await pages[i].evaluate((scrollPosition: any) => {
           const scrollContainer = document.querySelector('.messages-container, .chat-messages, main');
           if (scrollContainer) {
             scrollContainer.scrollTop = scrollPosition * 100;
@@ -452,7 +452,7 @@ test.describe('Multi-User Concurrent Scenarios', () => {
 
           return { success: true, user: user.displayName };
         } catch (error) {
-          return { success: false, user: user.displayName, error: error.message };
+          return { success: false, user: user.displayName, error: (error as any).message };
         }
       });
 

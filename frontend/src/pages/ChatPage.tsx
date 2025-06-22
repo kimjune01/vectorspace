@@ -26,6 +26,8 @@ export default function ChatPage() {
   const [editDescription, setEditDescription] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [collaborationStats, setCollaborationStats] = useState<any>(null);
+  const [isTemporary, setIsTemporary] = useState(false);
+  const [tempConversationData, setTempConversationData] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -37,12 +39,50 @@ export default function ChatPage() {
   const fetchConversation = async () => {
     if (!id) return;
     
+    // Check if this is a temporary conversation
+    if (id.startsWith('temp-')) {
+      const tempData = localStorage.getItem(`temp-conversation-${id}`);
+      if (tempData) {
+        const parsed = JSON.parse(tempData);
+        setIsTemporary(true);
+        setTempConversationData(parsed);
+        setEditTitle(parsed.title);
+        setEditDescription(parsed.description || '');
+        
+        // Create a minimal conversation-like object for display
+        setConversation({
+          id: parseInt(id.replace('temp-', '')),
+          title: parsed.title,
+          user_id: user?.id || 0,
+          author_username: user?.username || '',
+          author_display_name: user?.display_name || '',
+          is_public: parsed.isPublic,
+          is_hidden_from_profile: false,
+          messages: [],
+          participant_count: 1,
+          view_count: 0,
+          token_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          last_message_at: new Date().toISOString()
+        } as ConversationDetail);
+        
+        setIsLoading(false);
+        return;
+      } else {
+        setError('Temporary conversation data not found');
+        setIsLoading(false);
+        return;
+      }
+    }
+    
     try {
       setIsLoading(true);
       const data = await apiClient.getConversation(id);
       setConversation(data);
       setEditTitle(data.title);
       setEditDescription(''); // ConversationDetail doesn't have description
+      setIsTemporary(false);
     } catch (error) {
       setError('Failed to load conversation');
       console.error('Error fetching conversation:', error);
@@ -60,6 +100,33 @@ export default function ChatPage() {
     } catch (error) {
       // Collaboration stats are optional, don't show error to user
       console.error('Error fetching collaboration stats:', error);
+    }
+  };
+
+  const createActualConversation = async (firstMessage?: string) => {
+    if (!isTemporary || !tempConversationData || !user) return null;
+    
+    try {
+      const actualConversation = await apiClient.createConversation(
+        tempConversationData.title,
+        tempConversationData.description
+      );
+      
+      // Clean up temporary data
+      localStorage.removeItem(`temp-conversation-${id}`);
+      
+      // Store the first message to send after redirect if provided
+      if (firstMessage) {
+        localStorage.setItem(`pending-message-${actualConversation.id}`, firstMessage);
+      }
+      
+      // Update the URL to use the real conversation ID
+      navigate(`/chat/${actualConversation.id}`, { replace: true });
+      
+      return actualConversation;
+    } catch (error) {
+      console.error('Failed to create actual conversation:', error);
+      throw error;
     }
   };
 
@@ -98,7 +165,7 @@ export default function ChatPage() {
     if (!conversation) return;
     
     try {
-      await apiClient.deleteConversation(conversation.id.toString());
+      await apiClient.archiveConversation(conversation.id.toString());
       navigate('/');
     } catch (error) {
       console.error('Failed to archive conversation:', error);
@@ -250,8 +317,10 @@ export default function ChatPage() {
           
           <div className={user ? "h-[calc(100%-49px)]" : "h-full"}>
             <ChatInterface 
-              conversationId={conversation.id.toString()}
+              conversationId={isTemporary ? id! : conversation.id.toString()}
               initialMessages={conversation.messages || []}
+              isTemporary={isTemporary}
+              onCreateConversation={createActualConversation}
               onNewMessage={() => {
                 // Message count will be updated by WebSocket, no need to refetch
               }}

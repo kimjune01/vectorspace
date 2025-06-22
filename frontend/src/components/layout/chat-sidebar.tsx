@@ -301,10 +301,16 @@ export default function ChatSidebar({ onSessionSelect, onNewChat, currentSession
                 index={index}
                 currentSessionId={currentSessionId}
                 onSessionSelect={onSessionSelect}
-                onDelete={(sessionId) => {
-                  // Remove session from local state
-                  setSessions(prev => prev.filter(s => s.id !== sessionId));
-                  // TODO: Add API call to delete session from backend
+                onDelete={async (sessionId) => {
+                  try {
+                    // Call API to delete conversation
+                    await apiClient.deleteConversation(sessionId.toString());
+                    // Remove session from local state after successful deletion
+                    setSessions(prev => prev.filter(s => s.id !== sessionId));
+                  } catch (error) {
+                    console.error('Failed to delete conversation:', error);
+                    // Could show an error toast here
+                  }
                 }}
               />
             ))}

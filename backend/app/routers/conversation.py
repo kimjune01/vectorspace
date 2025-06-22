@@ -504,6 +504,40 @@ async def archive_conversation(
     )
 
 
+@router.delete("/{conversation_id}", response_model=SuccessResponse)
+async def delete_conversation(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete a conversation permanently."""
+    conversation_result = await db.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = conversation_result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+    
+    if conversation.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only conversation owner can delete"
+        )
+    
+    # Delete the conversation (cascade will handle related records)
+    await db.delete(conversation)
+    await db.commit()
+    
+    return SuccessResponse(
+        message="Conversation deleted successfully",
+        conversation_id=conversation_id
+    )
+
+
 @router.put("/{conversation_id}/hide", response_model=SuccessResponse)
 async def toggle_conversation_visibility(
     conversation_id: int,

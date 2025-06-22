@@ -216,6 +216,12 @@ export class ApiClient {
     });
   }
 
+  async archiveConversation(id: string): Promise<void> {
+    return this.request<void>(`/conversations/${id}/archive`, {
+      method: 'POST',
+    });
+  }
+
   // Search endpoints
   async searchConversations(query: string, limit: number = 20): Promise<SearchResponse> {
     return this.request<SearchResponse>(`/search`, {

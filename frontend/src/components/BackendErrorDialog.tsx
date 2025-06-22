@@ -13,6 +13,7 @@ import { ServerCrash, Wifi, RefreshCw, AlertTriangle } from 'lucide-react';
 interface BackendErrorDialogProps {
   isOpen: boolean;
   onRetry: () => void;
+  onClose?: () => void;
   errorType: 'network' | 'server' | 'timeout';
   lastAttempt?: Date;
 }
@@ -20,6 +21,7 @@ interface BackendErrorDialogProps {
 export function BackendErrorDialog({ 
   isOpen, 
   onRetry, 
+  onClose,
   errorType, 
   lastAttempt 
 }: BackendErrorDialogProps) {
@@ -102,7 +104,7 @@ export function BackendErrorDialog({
   }, [isOpen]);
 
   return (
-    <Dialog open={isOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose?.()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -154,6 +156,16 @@ export function BackendErrorDialog({
             >
               Refresh Page
             </Button>
+
+            {onClose && (
+              <Button 
+                variant="ghost" 
+                onClick={onClose} 
+                className="w-full"
+              >
+                Dismiss
+              </Button>
+            )}
           </div>
 
           {errorType === 'server' && (

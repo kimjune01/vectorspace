@@ -58,6 +58,7 @@ export function ErrorProvider({ children }: ErrorProviderProps) {
         <BackendErrorDialog
           isOpen={isDialogOpen}
           onRetry={handleRetry}
+          onClose={clearError}
           errorType={getErrorType()}
           lastAttempt={currentError.timestamp}
         />

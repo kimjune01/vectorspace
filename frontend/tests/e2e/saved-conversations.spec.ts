@@ -428,8 +428,8 @@ test.describe('Saved Conversations - Accessibility', () => {
     await expect(page.locator('h1')).toHaveAccessibleName('Saved Conversations');
     
     // Check that interactive elements have proper labels
-    await expect(page.locator('button:has-text("Search")')).toHaveAccessibleName();
-    await expect(page.locator('input[placeholder*="Search"]')).toHaveAccessibleName();
+    await expect(page.locator('button:has-text("Search")')).toHaveAccessibleName('Search');
+    await expect(page.locator('input[placeholder*="Search"]')).toHaveAccessibleName('Search conversations');
   });
 
   test('should support screen readers', async ({ page }) => {
@@ -440,7 +440,8 @@ test.describe('Saved Conversations - Accessibility', () => {
     await expect(page.locator('h2')).toBeVisible();
     
     // Lists should have proper semantics
-    await expect(page.locator('[role="list"], ul, ol')).toHaveCount.greaterThan(0);
+    const listCount = await page.locator('[role="list"], ul, ol').count();
+    expect(listCount).toBeGreaterThan(0);
   });
 
   test('should have sufficient color contrast', async ({ page }) => {

@@ -365,7 +365,7 @@ test.describe('Collections Management', () => {
     await expect(page.locator('text=Public collection')).toBeVisible();
     
     // Should show creation/update dates
-    await expect(page.locator('text=/Created|Updated/')).toHaveCount.greaterThan(0);
+    await expect(page.locator('text=/Created|Updated/')).toHaveCount(1);
   });
 
   test('should support collection sharing', async ({ page }) => {
@@ -434,10 +434,12 @@ test.describe('Collections Management', () => {
     await expect(page.locator('h1')).toBeVisible();
     
     // Check that interactive elements have labels
-    await expect(page.locator('button')).toHaveCount.greaterThan(0);
+    const buttonCount = await page.locator('button').count();
+    expect(buttonCount).toBeGreaterThan(0);
     
     // Check for proper list semantics
-    await expect(page.locator('[role="list"], ul')).toHaveCount.greaterThan(0);
+    const listCount = await page.locator('[role="list"], ul').count();
+    expect(listCount).toBeGreaterThan(0);
   });
 
   test('should support keyboard navigation', async ({ page }) => {

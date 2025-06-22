@@ -10,6 +10,7 @@ from app.schemas.social import (
     FollowerResponse, PaginatedFollowersResponse, PaginatedFollowingResponse
 )
 from app.schemas.user import UserProfileResponse, UpdateProfileRequest
+from app.services.user_service import UserService
 import logging
 
 router = APIRouter()
@@ -32,59 +33,11 @@ async def get_user_profile(
     - PII is filtered from conversation summaries
     """
     try:
-        # Get user by username
-        user_result = await db.execute(
-            select(User).where(User.username == username)
-        )
-        user = user_result.scalar_one_or_none()
+        user_service = UserService(db)
+        profile = await user_service.get_user_profile(username, current_user)
         
-        if not user:
+        if not profile:
             raise HTTPException(status_code=404, detail="User not found")
-        
-        # Get recent conversations (max 10, not hidden from profile, public only)
-        conversations_result = await db.execute(
-            select(Conversation)
-            .where(
-                Conversation.user_id == user.id,
-                Conversation.is_public == True,
-                Conversation.is_hidden_from_profile == False
-            )
-            .order_by(desc(Conversation.created_at))
-            .limit(10)
-        )
-        conversations = conversations_result.scalars().all()
-        
-        # Format recent conversations
-        recent_conversations = []
-        for conv in conversations:
-            conv_data = {
-                "id": conv.id,
-                "title": conv.title,
-                "created_at": conv.created_at.isoformat(),
-                "view_count": conv.view_count,
-                "is_archived": conv.is_archived()
-            }
-            
-            # Include summary if available (PII-filtered)
-            if conv.summary_public:
-                conv_data["summary"] = conv.summary_public
-            
-            recent_conversations.append(conv_data)
-        
-        # Build profile response
-        profile = UserProfileResponse(
-            id=user.id,
-            username=user.username,
-            display_name=user.display_name,
-            bio=user.bio,
-            profile_image_url=user.profile_image_url,
-            profile_image_data=user.profile_image_data,
-            stripe_pattern_seed=user.stripe_pattern_seed,
-            conversation_count=user.conversation_count,
-            conversations_last_24h=user.conversations_last_24h,
-            created_at=user.created_at.isoformat(),
-            recent_conversations=recent_conversations
-        )
         
         return profile
         
@@ -128,6 +81,11 @@ async def get_my_profile(
     - Allows user to see their own hidden conversations
     """
     try:
+        user_service = UserService(db)
+        
+        # Get user stats with correct conversation count
+        stats = await user_service._get_user_stats(current_user.id)
+        
         # Get all conversations for the user (including hidden)
         conversations_result = await db.execute(
             select(Conversation)
@@ -166,8 +124,8 @@ async def get_my_profile(
             "profile_image_url": current_user.profile_image_url,
             "profile_image_data": current_user.profile_image_data,
             "stripe_pattern_seed": current_user.stripe_pattern_seed,
-            "conversation_count": current_user.conversation_count,
-            "conversations_last_24h": current_user.conversations_last_24h,
+            "conversation_count": stats.conversation_count,
+            "conversations_last_24h": stats.conversations_last_24h,
             "created_at": current_user.created_at.isoformat(),
             "recent_conversations": recent_conversations
         }

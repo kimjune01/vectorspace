@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, delete
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from app.database import get_db
@@ -528,9 +528,28 @@ async def delete_conversation(
             detail="Only conversation owner can delete"
         )
     
-    # Delete the conversation (cascade will handle related records)
-    await db.delete(conversation)
-    await db.commit()
+    # Delete related records first to avoid foreign key constraints
+    try:
+        # Delete messages using bulk delete
+        await db.execute(
+            delete(Message).where(Message.conversation_id == conversation_id)
+        )
+        
+        # Delete participants using bulk delete
+        await db.execute(
+            delete(ConversationParticipant).where(ConversationParticipant.conversation_id == conversation_id)
+        )
+        
+        # Delete the conversation
+        await db.delete(conversation)
+        await db.commit()
+        
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete conversation: {str(e)}"
+        )
     
     return SuccessResponse(
         message="Conversation deleted successfully",

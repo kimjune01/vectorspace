@@ -97,6 +97,9 @@ export function ChatInterface({ conversationId, initialMessages = [], onNewMessa
     
     if (!isConnected) return;
 
+    // Prevent double sends while loading
+    if (isLoading) return;
+
     setIsLoading(true);
     const success = sendMessage({
       type: 'send_message',

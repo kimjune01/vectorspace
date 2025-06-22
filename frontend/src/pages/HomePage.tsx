@@ -158,7 +158,12 @@ export default function HomePage() {
               role: message.role,
               timestamp: message.timestamp
             };
-            setMessages(prev => [...prev, newMessage]);
+            setMessages(prev => {
+              // Check if message already exists to prevent duplicates
+              const exists = prev.some(m => m.id === newMessage.id);
+              if (exists) return prev;
+              return [...prev, newMessage];
+            });
           } else if (data.type === 'ai_response_chunk') {
             // Handle streaming AI response
             setMessages(prev => {

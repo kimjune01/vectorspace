@@ -62,10 +62,6 @@ async def health_check():
     
     return health_status
 
-# Additional health check endpoint for Railway
-@app.get("/api/health") 
-async def api_health_check():
-    return await health_check()
 
 # Initialize database and services on startup
 @app.on_event("startup")

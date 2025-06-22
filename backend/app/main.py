@@ -1,17 +1,18 @@
 import asyncio
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file FIRST
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 from app.routers import auth, conversation, websocket, search, admin, users, notifications, curation, human_chat, corpus, collaboration
 from app.database import Base, engine, init_database, check_database_connection
 from app.services.presence_manager import start_presence_cleanup_task
 from app.services.websocket_manager import websocket_manager
 from app.services.heartbeat_manager import get_heartbeat_manager
 from app.services.presence_metrics import presence_metrics
-
-# Load environment variables from .env file
-load_dotenv()
 
 app = FastAPI(title="VectorSpace API", version="1.0.0")
 

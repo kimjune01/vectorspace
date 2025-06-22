@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.auth import get_current_user
-from app.models import User, Conversation, SavedConversation, Collection, CollectionItem
+from app.models import User, Conversation, SavedConversation, Collection, CollectionItem, Message
 from app.schemas.social import (
     SaveConversationRequest,
     SavedConversationResponse,
@@ -20,7 +20,9 @@ from app.schemas.social import (
     CollectionWithItemsResponse,
     AddToCollectionRequest,
     PaginatedSavedConversationsResponse,
-    PaginatedCollectionsResponse
+    PaginatedCollectionsResponse,
+    CreateConversationFromExternalRequest,
+    CreateConversationFromExternalResponse
 )
 
 router = APIRouter(prefix="/curation", tags=["curation"])
@@ -218,6 +220,80 @@ async def check_if_saved(
     saved = result.scalar_one_or_none()
     
     return {"is_saved": saved is not None}
+
+
+@router.post("/conversations", response_model=CreateConversationFromExternalResponse)
+async def create_conversation_from_external(
+    request: CreateConversationFromExternalRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a new conversation from external content and save it to user's collection."""
+    # Create the conversation
+    conversation = Conversation(
+        user_id=current_user.id,
+        title=request.title,
+        is_public=request.is_public,
+        summary_public=f"External content from {request.source_type or 'unknown source'}: {request.title}"
+    )
+    db.add(conversation)
+    await db.flush()  # Get the conversation ID
+    
+    # Create the initial message with the external content
+    message = Message(
+        conversation_id=conversation.id,
+        from_user_id=current_user.id,
+        role="user",
+        message_type="chat",
+        content=request.content,
+        token_count=len(request.content.split())  # Simple token count approximation
+    )
+    db.add(message)
+    
+    # Add source information as a system message if URL is provided
+    if request.source_url:
+        source_message = Message(
+            conversation_id=conversation.id,
+            from_user_id=None,  # System message
+            role="system",
+            message_type="system",
+            content=f"Source: {request.source_url}",
+            token_count=len(request.source_url.split())
+        )
+        db.add(source_message)
+    
+    await db.flush()  # Ensure messages are created
+    
+    # Update conversation token count
+    conversation.token_count = sum([message.token_count for message in [message] + ([source_message] if request.source_url else [])])
+    conversation.last_message_at = message.timestamp
+    
+    # Save the conversation to user's collection
+    saved_conversation = SavedConversation(
+        user_id=current_user.id,
+        conversation_id=conversation.id,
+        tags=request.tags or [],
+        personal_note=request.personal_note
+    )
+    db.add(saved_conversation)
+    
+    await db.commit()
+    await db.refresh(conversation)
+    await db.refresh(saved_conversation)
+    
+    return CreateConversationFromExternalResponse(
+        conversation_id=conversation.id,
+        saved_conversation_id=saved_conversation.id,
+        title=conversation.title,
+        content=request.content,
+        source_url=request.source_url,
+        source_type=request.source_type,
+        tags=saved_conversation.tags,
+        personal_note=saved_conversation.personal_note,
+        is_public=conversation.is_public,
+        created_at=conversation.created_at,
+        saved_at=saved_conversation.saved_at
+    )
 
 
 # ========================================

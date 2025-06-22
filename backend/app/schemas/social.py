@@ -362,6 +362,39 @@ class PaginatedCollectionsResponse(BaseModel):
 
 
 # ========================================
+# EXTERNAL CONTENT CURATION SCHEMAS
+# ========================================
+
+class CreateConversationFromExternalRequest(BaseModel):
+    """Schema for creating a conversation from external content."""
+    title: str
+    content: str
+    source_url: Optional[str] = None
+    source_type: Optional[str] = None  # e.g., 'hackernews', 'article', etc.
+    tags: Optional[List[str]] = []
+    personal_note: Optional[str] = None
+    is_public: bool = True
+
+
+class CreateConversationFromExternalResponse(BaseModel):
+    """Schema for conversation created from external content response."""
+    conversation_id: int
+    saved_conversation_id: int
+    title: str
+    content: str
+    source_url: Optional[str]
+    source_type: Optional[str]
+    tags: List[str]
+    personal_note: Optional[str]
+    is_public: bool
+    created_at: datetime
+    saved_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ========================================
 # DISCOVERY SCHEMAS
 # ========================================
 

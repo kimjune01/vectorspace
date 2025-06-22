@@ -6,210 +6,156 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **VectorSpace** is a conversation discovery platform where users share AI chatbot conversations publicly, discover interesting conversations from others, and build profiles showcasing their AI interactions.
 
-### Core Vision
-- **AI Conversation Sharing**: Users chat with AI and conversations are public by default
-- **Semantic Discovery**: Browse and search conversations by topic and content
-- **Social Profiles**: User profiles showcasing conversation history and expertise
-- **Real-time Chat**: WebSocket-powered AI interactions with streaming responses
+### Core Features
+- **AI Conversation Sharing**: Public AI chat sessions with streaming responses
+- **Semantic Discovery**: Vector-powered search and content discovery
+- **Social Profiles**: User profiles showcasing conversation history
+- **Curation System**: Save conversations and organize into collections
+- **Real-time Chat**: WebSocket-powered interactions with message streaming
 
-## Architecture
+## Architecture Overview
 
-### Backend (`/backend/backend/`)
-- **Framework**: FastAPI (async Python)
-- **Database**: PostgreSQL with SQLAlchemy (async ORM)
+### Backend (`/backend/`)
+- **FastAPI** (async Python) with PostgreSQL + SQLAlchemy
 - **Vector Search**: ChromaDB for semantic conversation discovery
 - **Authentication**: JWT tokens with non-expiring sessions
 - **Real-time**: WebSocket for AI chat and user messaging
-- **AI Integration**: Mock AI service (production ready for OpenAI/Anthropic)
+- **AI Integration**: Configurable service layer (OpenAI/Anthropic/Mock)
 
 ### Frontend (`/frontend/`)
-- **Framework**: Vite + React + TypeScript
-- **UI Components**: shadcn/ui (adapted from T3 cloneathon project)
-- **Styling**: Tailwind CSS with comprehensive design system
-- **Routing**: React Router (SPA)
+- **Vite + React + TypeScript** with shadcn/ui components
 - **State Management**: TanStack Query + Zustand
-- **Authentication**: JWT with auth context
-- **Development Tools**: Comprehensive debugging suite with API logging, error handling, and state visibility
+- **Authentication**: JWT with protected routes
+- **Development Tools**: API logging, debug panel, enhanced error handling
 
 ### Corpus Service (`/corpus/`)
-- **Framework**: FastAPI microservice (async Python)
-- **Purpose**: External content discovery from Hacker News and other platforms
-- **Database**: Separate ChromaDB instance for vector similarity search
-- **Integration**: Proxied through main backend at `/api/corpus/*` endpoints
-- **Features**: Semantic similarity matching, content summarization, real-time health monitoring
+- **FastAPI microservice** for external content discovery (Hacker News, etc.)
+- **ChromaDB instance** for vector similarity search
+- **Proxied endpoints** through main backend at `/api/corpus/*`
 
 ## Development Setup
 
-### Project Initialization
-- **Python Backend**: Use `uv` for dependency management
-- **React Frontend**: Use Vite as build tool and dev server
-- **Package Management**: Use `pnpm` instead of `npm` for all Node.js projects
-- **Version Control**: Git for all changes
+### Prerequisites & Tools
+- **Python**: Use `uv` for dependency management (backend/corpus)
+- **Node.js**: Use `pnpm` instead of `npm` for all JavaScript projects
+- **Database**: PostgreSQL with environment-specific configuration
+- **Git**: Non-destructive commands can be executed without approval
 
-### Development Commands
-
-#### Backend
+### Quick Start
 ```bash
-cd backend
-uv run python main.py          # Start FastAPI server (port 8000)
-uv run python -m pytest       # Run all tests
-uv run python -m pytest tests/test_profile_images.py -v  # Run specific tests
+# Backend
+cd backend && uv run python main.py          # Port 8000
+
+# Frontend  
+cd frontend && pnpm install && pnpm run dev  # Port 5173
+
+# Corpus (optional)
+cd corpus && uv run python main.py           # Port 8001
+
+# Database seeding
+cd backend && uv run python seed_database.py # Creates testuser/testpass
 ```
 
-#### Frontend
-```bash
-cd frontend
-pnpm install                   # Install dependencies
-pnpm run dev                   # Start Vite dev server (port 5173)
-pnpm run build                 # Build for production
-pnpm run preview               # Preview production build
-pnpm test                      # Run test suite (82/83 tests passing)
-```
+### Development Workflow
+1. **Always prefer editing existing files** over creating new ones
+2. **Never create documentation files** unless explicitly requested
+3. **Test thoroughly**: Run both backend pytest and frontend E2E tests
+4. **Commit only when requested**: Use descriptive commit messages with Claude signature
 
-#### Corpus Service (External Content Discovery)
-```bash
-cd corpus
-uv run python main.py          # Start corpus service (port 8001)
-```
+## API Integration & Standards
 
-#### Database Seeding (Development)
-```bash
-cd backend
-uv run python seed_database.py # Seed database with test user (testuser/testpass)
-```
-
-## Development Guidelines
-
-### Version Control
-- Use git for all version control
-- Non-destructive git commands (status, log, diff, etc.) can be executed without approval
-- Always commit changes only when explicitly requested
-
-### File Management
-- Always prefer editing existing files over creating new ones
-- Never create documentation files (*.md) unless explicitly requested
-- Do not create README files unless specifically asked
-
-### Component Reuse Strategy
-- **T3 Components**: Reuse 70%+ of components from `/t3-cloneathon-jules_wip_4736255235786321083/`
-- **UI Library**: Copy entire shadcn/ui component library
-- **Adaptation**: Modify T3 chat interface for conversation discovery
-- **Design System**: Use T3's Tailwind configuration and CSS variables
-
-### API Integration
-- **Backend URLs**: `http://localhost:8000/api/*`
-- **Corpus URLs**: `http://localhost:8000/api/corpus/*` (proxied to `http://localhost:8001`)
-- **Authentication**: JWT Bearer tokens in Authorization header
+### Endpoints
+- **Backend**: `http://localhost:8000/api/*`
+- **Corpus**: `http://localhost:8000/api/corpus/*` (proxied to port 8001)
 - **WebSocket**: `ws://localhost:8000/api/ws/conversations/{id}`
-- **Error Handling**: Consistent error responses with proper HTTP status codes
+- **Auth**: JWT Bearer tokens in Authorization header
 
-### Code Quality
-- **TypeScript**: Maintain >95% TypeScript coverage
-- **Testing**: Comprehensive test coverage for both backend and frontend
-- **Responsive Design**: Mobile-first approach with T3's responsive patterns
-- **Accessibility**: Follow T3's accessible component patterns
+### Code Quality Standards
+- **TypeScript**: Maintain strict typing with >95% coverage
+- **Testing**: Comprehensive backend (pytest) and frontend (Playwright) test suites
+- **UI Components**: Use shadcn/ui with Tailwind CSS design system
+- **Responsive Design**: Mobile-first approach with accessibility considerations
+- **Error Handling**: Consistent API responses with proper HTTP status codes
 
-### Development & Debugging Tools
-- **API Logger**: Automatic request/response logging in development mode (`useApiLogger` hook)
-- **Debug Panel**: Real-time state visibility via floating panel in bottom-right corner
-- **Enhanced Errors**: Context-aware error displays with retry functionality and debug information
-- **Proxy Configuration**: Vite proxy setup for seamless API forwarding to backend
-- **Auto-login**: Optional auto-login (set `VITE_AUTO_LOGIN=true` in .env) for development and testing
+## Testing & Quality Assurance
 
-## Key Features Implemented
+### Test Infrastructure
+- **Backend**: 240+ pytest tests covering API endpoints, authentication, and curation system
+- **Frontend**: Comprehensive Playwright E2E tests for all major workflows
+- **Environment**: Automatic database configuration for testing vs production
+- **CI/CD**: Tests run on commits with proper failure reporting
 
-### Backend Features ✅
-- [x] User authentication (signup, login, logout, JWT)
-- [x] Conversation management (create, archive, visibility controls)
-- [x] AI chatbot integration with OpenAI API streaming responses
-- [x] Semantic search with ChromaDB vector embeddings
-- [x] User profiles with base64 profile images
-- [x] PII filtering for public conversation summaries
-- [x] Auto-summarization at 1500+ tokens
-- [x] Auto-archiving after 24h inactivity
-- [x] WebSocket for real-time chat with message deduplication
-- [x] Background task processing
-- [x] **Curation system**: Save conversations, create collections, organize content
-- [x] Comprehensive test suite (240+ tests, production-ready)
-- [x] Production-ready performance optimizations
-- [x] Railway health check endpoint (`/api/health`)
-- [x] **Environment-aware database configuration** for testing and production
+### Running Tests
+```bash
+# Backend tests
+cd backend && uv run python -m pytest                    # All tests
+cd backend && uv run python -m pytest tests/test_curation_api.py -v  # Specific tests
 
-### Frontend Features ✅
-- [x] Component library migration from T3 project (shadcn/ui components)
-- [x] Authentication UI (login/register forms with validation)
-- [x] Conversation discovery feed with pagination
-- [x] Semantic search interface with real-time results
-- [x] AI chat interface with WebSocket integration and streaming
-- [x] User profile pages with image upload and editing
-- [x] **Saved conversations page**: Complete curation interface with collections
-- [x] Responsive design and mobile support
-- [x] Protected routes and authentication context
-- [x] Modern UI with Tailwind CSS design system
-- [x] State management with TanStack Query and Zustand
-- [x] Comprehensive debugging tools (API logger, debug panel, enhanced errors)
-- [x] Development automation (auto-login, database seeding)
-- [x] **Comprehensive E2E test suite**: Playwright tests for all major workflows
-- [x] WebSocket message deduplication and improved error handling
+# Frontend E2E tests  
+cd frontend && pnpm test                                  # Unit tests
+cd frontend && pnpm exec playwright test                 # E2E tests
+cd frontend && pnpm exec playwright test --headed       # Visual debugging
+```
+
+### Key Test Coverage
+- **Authentication**: Login/logout, JWT validation, protected routes
+- **Conversations**: Creation, editing, archiving, WebSocket messaging
+- **Curation**: Saved conversations, collections, filtering, pagination
+- **Search**: Semantic search, discovery feed, real-time results
+- **UI/UX**: Responsive design, accessibility, error handling
+
+## Development & Debugging Tools
+
+### Built-in Debugging
+- **API Logger** (`useApiLogger`): Auto-logs all requests/responses in development
+- **Debug Panel**: Real-time state visibility (bottom-right corner)
+- **Enhanced Errors**: Context-aware error displays with retry functionality
+- **Auto-login**: Set `VITE_AUTO_LOGIN=true` for development automation
+
+## Deployment & Production
+
+### Environment Configuration
+- **Database**: PostgreSQL with environment-aware configuration
+- **Environment Variables**: 
+  - `DATABASE_URL`: PostgreSQL connection string
+  - `VITE_AUTO_LOGIN`: Development auto-login (set to `true` for testing)
+  - `TESTING`: Set to `1` to override DATABASE_URL requirement in tests
+- **Health Monitoring**: `/api/health` endpoint for Railway deployment monitoring
+
+### Production Deployment
+- **Backend**: Railway deployment with automatic health checks
+- **Frontend**: Vite build with optimized production assets
+- **Database**: PostgreSQL with proper connection pooling
+- **Vector Search**: ChromaDB with persistent storage
+
+## Troubleshooting
+
+### Common Issues
+1. **Database Connection Errors**
+   - Verify `DATABASE_URL` is set correctly
+   - For tests, ensure `TESTING=1` environment variable
+   - Check PostgreSQL service is running
+
+2. **WebSocket Connection Issues**
+   - Verify backend is running on port 8000
+   - Check Vite proxy configuration in `vite.config.ts`
+   - Ensure WebSocket URL format: `ws://localhost:8000/api/ws/conversations/{id}`
+
+3. **Authentication Problems**
+   - Clear browser localStorage and try again
+   - Verify JWT token format and expiration
+   - Check that auto-login is properly configured for development
+
+4. **Test Failures**
+   - Backend: Ensure test database is properly seeded
+   - Frontend: Check that both backend and frontend servers are running
+   - E2E: Verify Playwright browsers are installed (`pnpm exec playwright install`)
+
+### Performance Considerations
+- **Vector Search**: ChromaDB operations are async and may take time with large datasets
+- **WebSocket**: Message deduplication prevents duplicate AI responses
+- **Database**: Use proper indexing for conversation and user queries
+- **Frontend**: TanStack Query provides automatic caching for API responses
 
 ## Project Status
-
-**All Features Complete** ✅
-
-VectorSpace is now a fully functional conversation discovery platform with:
-- **Complete backend API** (240+ tests, production-ready)
-- **Complete frontend application** (React + TypeScript with comprehensive E2E testing)
-- **Curation system**: Save conversations, create collections, organize content
-- **External content discovery** via corpus microservice (Hacker News integration)
-- **Real-time chat** with WebSocket integration and streaming responses
-- **Semantic search** and conversation discovery with vector embeddings
-- **User authentication** and profile management with JWT tokens
-- **Responsive design** for all screen sizes with mobile-first approach
-- **Comprehensive debugging tools** for efficient development and troubleshooting
-- **Production-ready infrastructure** with Railway deployment and health monitoring
-
-## Debugging & Development Features
-
-### API Logging (`useApiLogger`)
-- **Location**: `/frontend/src/hooks/useApiLogger.ts`
-- **Purpose**: Automatic logging of all API requests/responses in development
-- **Features**: Request/response timing, headers, body logging, error tracking
-- **Usage**: Automatically active in development, access via `window.debugApiLog()`
-
-### Debug Panel (`DebugPanel`)
-- **Location**: `/frontend/src/components/debug/DebugPanel.tsx`
-- **Purpose**: Real-time visibility into application state
-- **Features**: Auth state, environment info, token status, collapsible interface
-- **Usage**: Floating panel in bottom-right corner (development only)
-
-### Enhanced Error Handling (`EnhancedError`)
-- **Location**: `/frontend/src/components/debug/EnhancedError.tsx`
-- **Purpose**: Context-aware error displays with debugging information
-- **Features**: Retry functionality, debug context, development-only details
-- **Usage**: Integrated into chat-sidebar and other components for better error UX
-
-### Development Automation
-- **Database Seeding**: `/backend/backend/seed_database.py` - Creates test user "Red Panda" (testuser/testpass)
-- **Auto-login**: Automatic authentication with test user in development mode
-- **Proxy Config**: Vite proxy configuration for seamless API forwarding (`/frontend/vite.config.ts`)
-
-### Test Infrastructure Improvements
-- **React act() Warnings**: Fixed by wrapping all async renders and user interactions in `act()`
-- **Auto-login Failures**: Resolved by properly mocking `AuthResponse` structure with `user` property
-- **Missing Test Wrappers**: Added `AuthProvider` and `BrowserRouter` wrappers to component tests
-- **API Mock Completeness**: Enhanced mocks to include all required API methods (`discoverConversations`, etc.)
-- **Test Stability**: Comprehensive test coverage with both unit and E2E testing
-
-### Curation System Testing (Latest)
-- **Backend API Tests**: Complete test suite for all curation endpoints (`tests/test_curation_api.py`)
-  - Saved conversations CRUD operations
-  - Collections management and organization
-  - Authentication and authorization testing
-  - Pagination and filtering functionality
-- **Frontend E2E Tests**: Playwright test suites for user workflows
-  - Saved conversations page testing (`tests/e2e/saved-conversations.spec.ts`)
-  - Collections management testing (`tests/e2e/collections.spec.ts`)
-  - Authentication flow verification
-  - Component interaction testing
-- **Database Environment Handling**: Fixed DATABASE_URL requirements for test environments
-- **Component Test Attributes**: Added proper `data-testid` attributes for reliable E2E testing
+VectorSpace is a **production-ready** conversation discovery platform with complete backend API, responsive frontend, comprehensive testing, and deployment infrastructure.

@@ -61,7 +61,7 @@ export const DebugPanel: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 font-mono">
+    <div className="fixed bottom-4 left-4 z-50 font-mono">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-lg transition-colors"
@@ -71,7 +71,7 @@ export const DebugPanel: React.FC = () => {
       </button>
       
       {isOpen && (
-        <div className="absolute bottom-12 right-0 bg-gray-900 text-white p-4 rounded-lg shadow-xl text-xs w-80 max-h-96 overflow-auto border border-gray-700">
+        <div className="absolute bottom-12 left-0 bg-gray-900 text-white p-4 rounded-lg shadow-xl text-xs w-80 max-h-96 overflow-auto border border-gray-700">
           <div className="flex justify-between items-center mb-3">
             <h3 className="font-bold text-blue-300">Debug Panel</h3>
             <button 

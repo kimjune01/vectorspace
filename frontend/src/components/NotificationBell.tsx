@@ -222,7 +222,15 @@ export function NotificationBell() {
           <>
             <DropdownMenuSeparator />
             <div className="p-2">
-              <Button variant="ghost" size="sm" className="w-full text-xs">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full text-xs"
+                onClick={() => {
+                  window.location.href = '/notifications';
+                  setIsOpen(false);
+                }}
+              >
                 View all notifications
               </Button>
             </div>

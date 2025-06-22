@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import useWebSocketLib, { ReadyState } from 'react-use-websocket';
 
 export interface WebSocketMessage {
   type: 'message' | 'new_message' | 'ai_response_chunk' | 'ai_response_complete' | 'ai_response_error' | 'error' | 'conversation_archived' | 'presence_update' | 'connection_established' | 'scroll_update' | 'title_updated' | 'ping' | 'pong';
@@ -39,6 +38,12 @@ export interface UseWebSocketOptions {
 }
 
 export function useWebSocket(url: string | null, options: UseWebSocketOptions = {}) {
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const {
     onMessage,
     onError,
@@ -48,77 +53,107 @@ export function useWebSocket(url: string | null, options: UseWebSocketOptions = 
     maxReconnectAttempts = 5,
   } = options;
 
-  const { sendMessage: libSendMessage, lastMessage, readyState } = useWebSocketLib(
-    url,
-    {
-      share: true, // Share connections across components
-      shouldReconnect: () => true,
-      reconnectInterval,
-      reconnectAttempts: maxReconnectAttempts,
-      filter: (message) => {
+  const connect = () => {
+    if (!url || wsRef.current?.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    setConnectionStatus('connecting');
+
+    try {
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setIsConnected(true);
+        setConnectionStatus('connected');
+        reconnectAttemptsRef.current = 0;
+        onOpen?.();
+      };
+
+      ws.onmessage = (event) => {
         try {
-          const data: WebSocketMessage = JSON.parse(message.data);
+          const message: WebSocketMessage = JSON.parse(event.data);
           
           // Handle ping messages by responding with pong
-          if (data.type === 'ping') {
-            libSendMessage(JSON.stringify({
+          if (message.type === 'ping') {
+            ws.send(JSON.stringify({
               type: 'pong',
-              timestamp: data.timestamp
+              timestamp: message.timestamp
             }));
-            return false; // Don't pass ping messages to the application
+            return; // Don't pass ping messages to the application
           }
           
-          return true; // Pass other messages
+          onMessage?.(message);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
-          return false;
         }
-      },
-      onOpen: () => {
-        onOpen?.();
-      },
-      onClose: () => {
+      };
+
+      ws.onclose = () => {
+        setIsConnected(false);
+        setConnectionStatus('disconnected');
         onClose?.();
-      },
-      onError: (error) => {
+
+        // Attempt to reconnect
+        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+          reconnectAttemptsRef.current++;
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect();
+          }, reconnectInterval);
+        }
+      };
+
+      ws.onerror = (error) => {
+        setConnectionStatus('error');
         onError?.(error);
-      }
-    },
-    Boolean(url) // Only connect if URL is provided
-  );
-
-  // Handle incoming messages
-  useEffect(() => {
-    if (lastMessage) {
-      try {
-        const message: WebSocketMessage = JSON.parse(lastMessage.data);
-        onMessage?.(message);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
+      };
+    } catch (error) {
+      setConnectionStatus('error');
+      console.error('WebSocket connection error:', error);
     }
-  }, [lastMessage, onMessage]);
+  };
 
-  // Map ReadyState to our connection status
-  const connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error' = 
-    readyState === ReadyState.CONNECTING ? 'connecting' :
-    readyState === ReadyState.OPEN ? 'connected' :
-    readyState === ReadyState.CLOSING || readyState === ReadyState.CLOSED ? 'disconnected' :
-    'error';
+  const disconnect = () => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
 
-  const isConnected = readyState === ReadyState.OPEN;
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    setIsConnected(false);
+    setConnectionStatus('disconnected');
+  };
 
   const sendMessage = (message: any) => {
-    if (readyState === ReadyState.OPEN) {
-      libSendMessage(JSON.stringify(message));
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(message));
       return true;
     }
     return false;
   };
 
-  // These are no-ops since react-use-websocket handles connection management
-  const connect = () => {};
-  const disconnect = () => {};
+  useEffect(() => {
+    if (url) {
+      connect();
+    }
+
+    return () => {
+      disconnect();
+    };
+  }, [url]);
+
+  useEffect(() => {
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     isConnected,

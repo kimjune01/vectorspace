@@ -49,7 +49,7 @@ export default function HomePage() {
 
   // WebSocket connection for real-time chat
   const wsUrl = activeConversationId ? apiClient.getWebSocketUrl(activeConversationId) : null;
-  const { sendMessage: wsSendMessage, isConnected } = useWebSocket(wsUrl, {
+  const { sendMessage: wsSendMessage, isConnected, connectionStatus } = useWebSocket(wsUrl, {
     onMessage: (message) => {
       if (message.type === 'new_message') {
         const msgData = message.message;
@@ -109,6 +109,16 @@ export default function HomePage() {
       setIsLoading(false);
     }
   });
+
+  // Debug WebSocket connection state
+  useEffect(() => {
+    console.log('WebSocket state changed:', { 
+      activeConversationId, 
+      wsUrl, 
+      isConnected, 
+      connectionStatus 
+    });
+  }, [activeConversationId, wsUrl, isConnected, connectionStatus]);
   
   const {
     containerRef,
@@ -165,6 +175,7 @@ export default function HomePage() {
       );
       
       setCurrentConversation(conversation);
+      setActiveConversationId(conversation.id.toString());
       await sendMessage(conversation.id.toString());
     } catch (error) {
       console.error('Failed to start conversation:', error);
@@ -189,12 +200,26 @@ export default function HomePage() {
     // Ensure WebSocket is connected to the right conversation
     if (activeConversationId !== targetConversationId.toString()) {
       setActiveConversationId(targetConversationId.toString());
-      // Wait a moment for WebSocket to connect
-      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Wait for WebSocket to connect (up to 5 seconds)
+      for (let i = 0; i < 50; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        if (isConnected) break;
+        if (connectionStatus === 'error') {
+          setError('Failed to establish WebSocket connection');
+          return;
+        }
+      }
     }
     
     if (!isConnected) {
-      setError('Connection not established. Please try again.');
+      console.log('WebSocket connection debug:', { 
+        isConnected, 
+        connectionStatus, 
+        wsUrl, 
+        activeConversationId 
+      });
+      setError(`Connection not established (${connectionStatus}). Please try again.`);
       return;
     }
     

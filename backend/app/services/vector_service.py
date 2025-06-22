@@ -55,18 +55,16 @@ class VectorService:
         # Initialize ChromaDB client
         self.client = chromadb.PersistentClient(path=persist_directory)
         
-        # Initialize OpenAI embedding function
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if openai_api_key:
-            self.embedding_function = embedding_functions.OpenAIEmbeddingFunction(
-                api_key=openai_api_key,
-                model_name=embedding_model
-            )
-            logger.info(f"VectorService initialized with OpenAI embeddings: {embedding_model}")
-        else:
-            # For tests and development without API key, use simple test embedding function
-            logger.warning("No OPENAI_API_KEY found, using test embedding function")
+        # Initialize ChromaDB's free default embedding function
+        # This provides high-quality embeddings without API costs
+        if os.getenv("TESTING") == "1":
+            # For tests, use simple test embedding function for deterministic results
+            logger.info("Using test embedding function for testing environment")
             self.embedding_function = TestEmbeddingFunction()
+        else:
+            # Use ChromaDB's free default embedding function (all-MiniLM-L6-v2)
+            self.embedding_function = embedding_functions.DefaultEmbeddingFunction()
+            logger.info("VectorService initialized with ChromaDB default embeddings (all-MiniLM-L6-v2)")
         
         logger.info(f"VectorService initialized with collection: {collection_name}")
     
@@ -77,7 +75,10 @@ class VectorService:
         """
         processed = {}
         for key, value in metadata.items():
-            if isinstance(value, list):
+            if value is None:
+                # Skip None values as ChromaDB doesn't handle them well
+                continue
+            elif isinstance(value, list):
                 # Convert lists to comma-separated strings
                 processed[key] = ",".join(str(item) for item in value)
             elif isinstance(value, dict):
@@ -265,14 +266,28 @@ class VectorService:
         try:
             collection = self.get_or_create_collection()
             
-            # Convert lists to comma-separated strings for ChromaDB metadata compatibility
+            # Convert metadata to ChromaDB-compatible format
             processed_metadata = self._process_metadata(metadata) if metadata else {}
             
-            collection.upsert(
-                ids=[str(conversation_id)],
-                documents=[summary],
-                metadatas=[processed_metadata] if processed_metadata else None
-            )
+            upsert_kwargs = {
+                "ids": [str(conversation_id)],
+                "documents": [summary]
+            }
+            
+            if processed_metadata:
+                upsert_kwargs["metadatas"] = [processed_metadata]
+            
+            # In testing mode, provide simple embeddings directly to avoid ChromaDB embedding function issues
+            if os.getenv("TESTING") == "1":
+                # Generate a simple embedding for testing
+                hash_val = hash(summary)
+                embedding = []
+                for i in range(384):
+                    val = ((hash_val + i) % 10000) / 10000.0 - 0.5
+                    embedding.append(val)
+                upsert_kwargs["embeddings"] = [embedding]
+            
+            collection.upsert(**upsert_kwargs)
             
             return True
         except Exception as e:

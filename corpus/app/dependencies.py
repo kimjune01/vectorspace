@@ -13,9 +13,7 @@ from .services.scraper_manager import ScraperManager
 def get_vector_db() -> VectorDBService:
     """Get ChromaDB service instance."""
     return VectorDBService(
-        persist_directory=os.getenv("CHROMADB_PATH", "./chroma_db"),
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
-        embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+        persist_directory=os.getenv("CHROMADB_PATH", "./chroma_db")
     )
 
 

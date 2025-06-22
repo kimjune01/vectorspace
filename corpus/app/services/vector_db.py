@@ -19,12 +19,9 @@ class VectorDBService:
     
     def __init__(
         self,
-        persist_directory: str = "./chroma_db",
-        openai_api_key: Optional[str] = None,
-        embedding_model: str = "text-embedding-3-small"
+        persist_directory: str = "./chroma_db"
     ):
         self.persist_directory = persist_directory
-        self.embedding_model = embedding_model
         
         # Initialize ChromaDB client
         self.client = chromadb.PersistentClient(
@@ -35,15 +32,10 @@ class VectorDBService:
             )
         )
         
-        # Set up OpenAI embedding function
-        if openai_api_key:
-            self.embedding_function = embedding_functions.OpenAIEmbeddingFunction(
-                api_key=openai_api_key,
-                model_name=embedding_model
-            )
-        else:
-            logger.warning("No OpenAI API key provided, using default embeddings")
-            self.embedding_function = embedding_functions.DefaultEmbeddingFunction()
+        # Use ChromaDB's free default embedding function
+        # This provides high-quality embeddings without API costs
+        self.embedding_function = embedding_functions.DefaultEmbeddingFunction()
+        logger.info("VectorDB initialized with ChromaDB default embeddings (all-MiniLM-L6-v2)")
         
         # Cache for collections
         self._collections: Dict[str, Any] = {}

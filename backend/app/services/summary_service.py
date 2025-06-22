@@ -54,7 +54,10 @@ class SummaryService:
             
             # Update conversation title based on new summary
             if update_title:
-                await self._update_conversation_title(conversation_id, summary, db)
+                try:
+                    await self._update_conversation_title(conversation_id, summary, db)
+                except Exception as e:
+                    print(f"Error updating title in check_and_generate_summary: {e}")
             
             return summary
         
@@ -139,7 +142,10 @@ class SummaryService:
                 
                 # Update conversation title based on new summary
                 if update_title:
-                    await self._update_conversation_title(conversation_id, summary, db)
+                    try:
+                        await self._update_conversation_title(conversation_id, summary, db)
+                    except Exception as e:
+                        print(f"Error updating title in force_generate_summary: {e}")
         
         return summary
     

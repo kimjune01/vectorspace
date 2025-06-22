@@ -170,15 +170,12 @@ Conversation context:
 Generate only the title, no explanation:"""
         
         try:
-            response = await self.ai_service.generate_complete_response(
-                prompt, 
-                max_tokens=50,
-                temperature=0.7
-            )
+            messages = [{"role": "user", "content": prompt}]
+            response_data = await self.ai_service.generate_complete_response(messages)
             
-            if response:
+            if response_data and response_data.get("content"):
                 # Clean up the response
-                title = response.strip().strip('"').strip("'")
+                title = response_data["content"].strip().strip('"').strip("'")
                 return self._validate_and_clean_title(title)
         
         except Exception as e:
@@ -200,14 +197,11 @@ Summary:
 Generate only the title, no explanation:"""
         
         try:
-            response = await self.ai_service.generate_complete_response(
-                prompt,
-                max_tokens=50,
-                temperature=0.7
-            )
+            messages = [{"role": "user", "content": prompt}]
+            response_data = await self.ai_service.generate_complete_response(messages)
             
-            if response:
-                title = response.strip().strip('"').strip("'")
+            if response_data and response_data.get("content"):
+                title = response_data["content"].strip().strip('"').strip("'")
                 return self._validate_and_clean_title(title)
         
         except Exception as e:

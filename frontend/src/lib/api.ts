@@ -15,7 +15,9 @@ import type {
   CorpusCollectionsResponse,
   CorpusSearchResponse,
   CorpusCollectionStats,
-  CorpusDebugStatus
+  CorpusDebugStatus,
+  CreateConversationFromExternalRequest,
+  CreateConversationFromExternalResponse
 } from '@/types/api';
 
 // Use environment variable in production, fallback to proxy in development
@@ -53,6 +55,11 @@ export class BackendError extends Error {
 
   public isTimeoutError(): boolean {
     return this.errorType === 'timeout' || this.statusCode === 408 || this.statusCode === 504;
+  }
+
+  public shouldShowModal(): boolean {
+    // Don't show modals for 404 (Not Found) errors
+    return this.statusCode !== 404;
   }
 }
 
@@ -382,6 +389,13 @@ export class ApiClient {
   async deleteCollection(collectionId: number) {
     return this.request(`/curation/collections/${collectionId}`, {
       method: 'DELETE',
+    });
+  }
+
+  async createConversationFromExternal(data: CreateConversationFromExternalRequest): Promise<CreateConversationFromExternalResponse> {
+    return this.request<CreateConversationFromExternalResponse>(`/curation/conversations`, {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 

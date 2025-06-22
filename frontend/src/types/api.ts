@@ -480,3 +480,31 @@ export interface EnhancedSimilarConversationsResponse {
   corpus_available: boolean;
   corpus_error?: string;
 }
+
+// ========================================
+// EXTERNAL CONTENT CURATION TYPES
+// ========================================
+
+export interface CreateConversationFromExternalRequest {
+  title: string;
+  content: string;
+  source_url?: string;
+  source_type?: string;
+  tags?: string[];
+  personal_note?: string;
+  is_public?: boolean;
+}
+
+export interface CreateConversationFromExternalResponse {
+  conversation_id: number;
+  saved_conversation_id: number;
+  title: string;
+  content: string;
+  source_url?: string;
+  source_type?: string;
+  tags: string[];
+  personal_note?: string;
+  is_public: boolean;
+  created_at: string;
+  saved_at: string;
+}

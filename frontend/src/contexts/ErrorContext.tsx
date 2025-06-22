@@ -88,7 +88,10 @@ export function useApiWithErrorHandling() {
       return await apiCall();
     } catch (error) {
       if (error instanceof BackendError) {
-        showBackendError(error, retryCallback);
+        // Only show modal if the error should display one (not for 404s)
+        if (error.shouldShowModal()) {
+          showBackendError(error, retryCallback);
+        }
         return null;
       }
       // Re-throw non-backend errors

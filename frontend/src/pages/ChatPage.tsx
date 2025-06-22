@@ -7,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { BookmarkButton } from '@/components/BookmarkButton';
-import { HumanChatPanel } from '@/components/HumanChatPanel';
-import { CollaborationToolbar } from '@/components/collaboration/CollaborationToolbar';
 import { ArrowLeft, Archive, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
@@ -24,15 +22,12 @@ export default function ChatPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [collaborationStats, setCollaborationStats] = useState<any>(null);
   const [isTemporary, setIsTemporary] = useState(false);
   const [tempConversationData, setTempConversationData] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
       fetchConversation();
-      fetchCollaborationStats();
     }
   }, [id]);
 
@@ -91,17 +86,6 @@ export default function ChatPage() {
     }
   };
 
-  const fetchCollaborationStats = async () => {
-    if (!id || !user) return;
-    
-    try {
-      const stats = await apiClient.request(`/collaboration/conversations/${id}/stats`);
-      setCollaborationStats(stats);
-    } catch (error) {
-      // Collaboration stats are optional, don't show error to user
-      console.error('Error fetching collaboration stats:', error);
-    }
-  };
 
   const createActualConversation = async (firstMessage?: string) => {
     if (!isTemporary || !tempConversationData || !user) return null;
@@ -130,11 +114,6 @@ export default function ChatPage() {
     }
   };
 
-  const handleSuggestionApplied = (suggestion: any) => {
-    // When a suggestion is accepted, we could potentially update the conversation
-    // For now, just refresh the stats
-    fetchCollaborationStats();
-  };
 
   const handleSaveEdit = async () => {
     if (!conversation) return;
@@ -215,11 +194,11 @@ export default function ChatPage() {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate(`/profile/${conversation?.author_username}`)} 
+              onClick={() => navigate('/')} 
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Profile
+              Back to Home
             </Button>
           </div>
         </div>
@@ -300,19 +279,8 @@ export default function ChatPage() {
 
         {/* Chat Interface */}
         <Card className="h-[600px] overflow-hidden">
-          {/* Collaboration Toolbar */}
-          {user && (
-            <CollaborationToolbar
-              conversationId={conversation.id}
-              isOwner={!!isOwner}
-              isPublic={conversation.is_public}
-              stats={collaborationStats}
-              onSuggestionApplied={handleSuggestionApplied}
-              onStatsUpdate={fetchCollaborationStats}
-            />
-          )}
           
-          <div className={user ? "h-[calc(100%-49px)]" : "h-full"}>
+          <div className="h-full">
             <ChatInterface 
               conversationId={isTemporary ? id! : conversation.id.toString()}
               initialMessages={conversation.messages || []}
@@ -332,15 +300,6 @@ export default function ChatPage() {
           </div>
         </Card>
 
-        {/* Human Chat Panel */}
-        {user && conversation && (
-          <HumanChatPanel
-            conversationId={conversation.id}
-            currentUserId={user.id}
-            isOpen={isChatOpen}
-            onToggle={() => setIsChatOpen(!isChatOpen)}
-          />
-        )}
       </div>
     </div>
   );

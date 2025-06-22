@@ -69,43 +69,6 @@ export function CollaborationToolbar({
       {/* Collaboration Tools */}
       <div className="flex items-center gap-1">
 
-        {/* Collaboration Management */}
-        {isOwner && (
-          <Popover open={activePanel === 'collaboration'} onOpenChange={(open) => !open && setActivePanel(null)}>
-            <PopoverTrigger asChild>
-              <Button
-                variant={activePanel === 'collaboration' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => handlePanelToggle('collaboration')}
-              >
-                <UserPlus className="h-4 w-4 mr-1" />
-                Collaborate
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-96 p-0" align="end">
-              <Tabs defaultValue="invite" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="invite">Invite</TabsTrigger>
-                  <TabsTrigger value="manage">Manage</TabsTrigger>
-                </TabsList>
-                <TabsContent value="invite" className="p-4">
-                  <CollaborationInvitePanel
-                    conversationId={conversationId}
-                    isOwner={isOwner}
-                    onCollaborationChange={onStatsUpdate}
-                  />
-                </TabsContent>
-                <TabsContent value="manage" className="p-4">
-                  <div className="text-center text-muted-foreground">
-                    <Users className="h-8 w-8 mx-auto mb-2" />
-                    <p className="text-sm">Collaboration management</p>
-                    <p className="text-xs">View and manage active collaborators</p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </PopoverContent>
-          </Popover>
-        )}
 
         {/* Stats Display */}
         {stats && (stats.total_suggestions > 0 || stats.active_collaborators > 0) && (

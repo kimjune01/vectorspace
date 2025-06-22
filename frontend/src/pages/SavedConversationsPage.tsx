@@ -53,7 +53,7 @@ export default function SavedConversationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || '');
+  const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || 'all');
   const [editingNote, setEditingNote] = useState<number | null>(null);
   const [editNoteContent, setEditNoteContent] = useState('');
   const [editingTags, setEditingTags] = useState<number | null>(null);
@@ -80,7 +80,7 @@ export default function SavedConversationsPage() {
       const response = await apiClient.getSavedConversations(
         currentPage, 
         20, 
-        selectedTag || undefined
+        selectedTag && selectedTag !== 'all' ? selectedTag : undefined
       ) as any;
       setSavedConversations(response.saved_conversations || []);
       setTotalPages(Math.ceil((response.total || 0) / 20));
@@ -104,7 +104,7 @@ export default function SavedConversationsPage() {
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchQuery) params.set('search', searchQuery);
-    if (selectedTag) params.set('tag', selectedTag);
+    if (selectedTag && selectedTag !== 'all') params.set('tag', selectedTag);
     setSearchParams(params);
     
     // Filter conversations locally for immediate feedback
@@ -259,7 +259,7 @@ export default function SavedConversationsPage() {
                     <SelectValue placeholder="All tags" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All tags</SelectItem>
+                    <SelectItem value="all">All tags</SelectItem>
                     {allTags.map(tag => (
                       <SelectItem key={tag} value={tag}>{tag}</SelectItem>
                     ))}

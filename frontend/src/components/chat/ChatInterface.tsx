@@ -14,23 +14,20 @@ import type { Message } from '@/types';
 interface ChatInterfaceProps {
   conversationId: string;
   initialMessages?: Message[];
-  onNewMessage?: (message: Message) => void;
+  isTemporary?: boolean;
+  onCreateConversation?: (firstMessage?: string) => Promise<any>;
+  onNewMessage?: () => void;
   onTitleUpdate?: (newTitle: string) => void;
 }
 
-export function ChatInterface({ conversationId, initialMessages = [], onNewMessage, onTitleUpdate }: ChatInterfaceProps) {
+export function ChatInterface({ conversationId, initialMessages = [], isTemporary = false, onCreateConversation, onNewMessage, onTitleUpdate }: ChatInterfaceProps) {
   const { isAuthenticated } = useAuth();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const wsUrl = conversationId && isAuthenticated ? apiClient.getWebSocketUrl(conversationId) : null;
-
-  // Update messages when initialMessages prop changes
-  useEffect(() => {
-    setMessages(initialMessages);
-  }, [initialMessages]);
+  const wsUrl = conversationId && isAuthenticated && !isTemporary ? apiClient.getWebSocketUrl(conversationId) : null;
 
   const { isConnected, connectionStatus, sendMessage } = useWebSocket(wsUrl, {
     onMessage: (message: WebSocketMessage) => {
@@ -40,6 +37,29 @@ export function ChatInterface({ conversationId, initialMessages = [], onNewMessa
       console.error('WebSocket error:', error);
     },
   });
+
+  // Update messages when initialMessages prop changes
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages]);
+
+  // Check for pending message to send when conversation loads
+  useEffect(() => {
+    if (!isTemporary && conversationId && isConnected) {
+      const pendingMessage = localStorage.getItem(`pending-message-${conversationId}`);
+      if (pendingMessage) {
+        localStorage.removeItem(`pending-message-${conversationId}`);
+        setNewMessage(pendingMessage);
+        // Auto-send the pending message after a brief delay
+        setTimeout(() => {
+          sendMessage({
+            type: 'send_message',
+            content: pendingMessage,
+          });
+        }, 500);
+      }
+    }
+  }, [conversationId, isConnected, isTemporary, sendMessage]);
 
   const handleWebSocketMessage = (wsMessage: WebSocketMessage) => {
     if (wsMessage.type === 'new_message') {
@@ -95,20 +115,37 @@ export function ChatInterface({ conversationId, initialMessages = [], onNewMessa
     
     if (!isAuthenticated) return;
     
-    if (!isConnected) return;
-
     // Prevent double sends while loading
     if (isLoading) return;
-
+    
     setIsLoading(true);
-    const success = sendMessage({
-      type: 'send_message',
-      content: newMessage,
-    });
+    
+    try {
+      // If this is a temporary conversation, create the actual conversation first
+      if (isTemporary && onCreateConversation) {
+        await onCreateConversation(newMessage.trim());
+        // The conversation creation will redirect to the new URL,
+        // so we don't need to send the message here
+        return;
+      }
+      
+      if (!isConnected) {
+        setIsLoading(false);
+        return;
+      }
 
-    if (success) {
-      setNewMessage('');
-    } else {
+      const success = sendMessage({
+        type: 'send_message',
+        content: newMessage,
+      });
+
+      if (success) {
+        setNewMessage('');
+      } else {
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
       setIsLoading(false);
     }
   };
@@ -149,14 +186,30 @@ export function ChatInterface({ conversationId, initialMessages = [], onNewMessa
       {/* Connection Status */}
       <div className="flex items-center justify-between p-3 border-b bg-muted/50">
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${getConnectionStatusColor()}`}></div>
-          <span className="text-sm font-medium">
-            {connectionStatus === 'connected' ? 'Connected' : 'Connecting...'}
-          </span>
+          {isTemporary ? (
+            <>
+              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+              <span className="text-sm font-medium">Draft Conversation</span>
+            </>
+          ) : (
+            <>
+              <div className={`w-2 h-2 rounded-full ${getConnectionStatusColor()}`}></div>
+              <span className="text-sm font-medium">
+                {connectionStatus === 'connected' ? 'Connected' : 'Connecting...'}
+              </span>
+            </>
+          )}
         </div>
-        <Badge variant="secondary" className="text-xs">
-          {messages.length} messages
-        </Badge>
+        <div className="flex items-center gap-2">
+          {isTemporary && (
+            <Badge variant="outline" className="text-xs text-orange-600 border-orange-200">
+              Not saved yet
+            </Badge>
+          )}
+          <Badge variant="secondary" className="text-xs">
+            {messages.length} messages
+          </Badge>
+        </div>
       </div>
 
       {/* Messages */}
@@ -186,6 +239,7 @@ export function ChatInterface({ conversationId, initialMessages = [], onNewMessa
                 className={`flex gap-3 ${
                   message.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
+                data-role={message.role}
               >
                 <div
                   className={`flex gap-3 max-w-[80%] ${
@@ -261,6 +315,7 @@ export function ChatInterface({ conversationId, initialMessages = [], onNewMessa
             placeholder={isAuthenticated ? "Type your message..." : "Sign in to send messages"}
             disabled={!isAuthenticated || !isConnected || isLoading}
             className="flex-1"
+            data-testid="message-input"
           />
           <Button
             onClick={handleSendMessage}

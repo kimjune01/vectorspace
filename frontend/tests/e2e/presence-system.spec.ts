@@ -319,6 +319,13 @@ async function loginUser(page: any, user: typeof TEST_USERS.alice) {
 }
 
 async function createNewConversation(page: any, title: string) {
+  // Navigate to Chat tab to create new conversation
+  const chatTab = page.locator('[role="tab"]').filter({ hasText: /chat/i });
+  if (await chatTab.isVisible()) {
+    await chatTab.click();
+    await page.waitForTimeout(1000);
+  }
+  
   const newChatButton = page.locator('button, a').filter({ hasText: /new chat|new conversation|start/i });
   
   if (await newChatButton.isVisible()) {

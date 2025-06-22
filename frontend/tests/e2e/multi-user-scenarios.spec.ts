@@ -511,6 +511,14 @@ async function createConversation(page: any, title: string): Promise<string> {
   await page.goto('/');
   await page.waitForTimeout(1000);
   
+  // Navigate to Chat tab to create new conversation
+  const chatTab = page.locator('[role="tab"]').filter({ hasText: /chat/i });
+  if (await chatTab.isVisible()) {
+    await chatTab.click();
+    await page.waitForTimeout(1000);
+  }
+  
+  // Look for new chat button in Chat tab
   const newChatButton = page.locator('button, a').filter({ hasText: /new chat|new conversation|start/i });
   
   if (await newChatButton.isVisible()) {

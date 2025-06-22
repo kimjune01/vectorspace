@@ -110,7 +110,6 @@ test.describe('Social Features', () => {
       expect(badgeCount).toBeGreaterThan(0);
       
       // Check for action buttons
-      await expect(page.getByRole('button', { name: 'Start New Chat' })).toBeVisible();
       await expect(page.getByRole('link', { name: 'Saved' })).toBeVisible();
       await expect(page.getByRole('link', { name: 'Explore' })).toBeVisible();
     }

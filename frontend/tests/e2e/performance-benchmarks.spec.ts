@@ -13,6 +13,14 @@ test.describe('Performance Benchmarks', () => {
     
     // Navigate to conversation creation
     await page.goto('/');
+    
+    // Navigate to Chat tab to create new conversation
+    const chatTab = page.locator('[role="tab"]').filter({ hasText: /chat/i });
+    if (await chatTab.isVisible()) {
+      await chatTab.click();
+      await page.waitForTimeout(1000);
+    }
+    
     const newChatButton = page.locator('button, a').filter({ hasText: /new chat|new conversation/i });
     
     if (await newChatButton.isVisible()) {
@@ -416,6 +424,14 @@ async function setupConversation(page: any): Promise<string> {
   
   // Create new conversation if none exist
   await page.goto('/');
+  
+  // Navigate to Chat tab to create new conversation
+  const chatTab = page.locator('[role="tab"]').filter({ hasText: /chat/i });
+  if (await chatTab.isVisible()) {
+    await chatTab.click();
+    await page.waitForTimeout(1000);
+  }
+  
   const newChatButton = page.locator('button, a').filter({ hasText: /new chat|new conversation/i });
   
   if (await newChatButton.isVisible()) {

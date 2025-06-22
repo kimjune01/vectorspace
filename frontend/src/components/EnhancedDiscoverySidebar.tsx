@@ -212,15 +212,6 @@ export default function EnhancedDiscoverySidebar({
           {/* Quick Actions */}
           <div className="pt-4 border-t">
             <div className="space-y-2">
-              <Button 
-                onClick={onNewChat} 
-                className="w-full" 
-                size="sm"
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Start New Chat
-              </Button>
-              
               {user && (
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" size="sm" asChild>

@@ -35,12 +35,23 @@ export function NewConversationDialog({ children }: NewConversationDialogProps) 
 
     setIsLoading(true);
     try {
-      const conversation = await apiClient.createConversation(title, description || undefined);
+      // Create a temporary conversation ID for the chat page
+      // The actual conversation will be created when the first message is sent
+      const tempId = `temp-${Date.now()}`;
+      const tempConversation = {
+        title: title.trim(),
+        description: description || undefined,
+        isPublic
+      };
+      
+      // Store temporary conversation data in localStorage
+      localStorage.setItem(`temp-conversation-${tempId}`, JSON.stringify(tempConversation));
+      
       setIsOpen(false);
       setTitle('');
       setDescription('');
       setIsPublic(true);
-      navigate(`/chat/${conversation.id}`);
+      navigate(`/chat/${tempId}`);
     } catch (error) {
       console.error('Failed to create conversation:', error);
     } finally {
@@ -52,7 +63,7 @@ export function NewConversationDialog({ children }: NewConversationDialogProps) 
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button>
+          <Button data-testid="new-conversation-btn">
             <Plus className="h-4 w-4 mr-2" />
             New Conversation
           </Button>

@@ -113,6 +113,7 @@ const ChatSessionItem: React.FC<ChatSessionItemProps> = ({
           className="w-full justify-start items-center text-sm h-auto py-2.5 px-3 pr-10"
           onClick={() => onSessionSelect(session.id)}
           title={session.title}
+          data-testid="chat-item"
         >
           <div className="flex flex-col items-start text-left flex-grow overflow-hidden">
             <span className="font-medium text-foreground group-hover:text-foreground truncate w-full">

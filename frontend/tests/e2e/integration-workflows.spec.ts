@@ -376,6 +376,13 @@ test.describe('Complete Integration Workflows', () => {
     try {
       await page.context().setOffline(true);
       
+      // Navigate to Chat tab to create new conversation
+      const chatTab = page.locator('[role="tab"]').filter({ hasText: /chat/i });
+      if (await chatTab.isVisible()) {
+        await chatTab.click();
+        await page.waitForTimeout(1000);
+      }
+      
       const newChatButton = page.locator('button, a').filter({ hasText: /new chat|new conversation/i });
       if (await newChatButton.isVisible()) {
         await newChatButton.click();
@@ -460,6 +467,13 @@ async function createDetailedConversation(page: any, data: { title: string; mess
   // Navigate to home and create new conversation
   await page.goto('/');
   await page.waitForTimeout(1000);
+  
+  // Navigate to Chat tab to create new conversation
+  const chatTab = page.locator('[role="tab"]').filter({ hasText: /chat/i });
+  if (await chatTab.isVisible()) {
+    await chatTab.click();
+    await page.waitForTimeout(1000);
+  }
   
   const newChatButton = page.locator('button, a').filter({ hasText: /new chat|new conversation|start/i });
   

@@ -32,6 +32,11 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => (
 describe('LoginForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    
+    // Mock the login method to return proper auth response for auto-login
+    apiClient.login = vi.fn().mockResolvedValue(mockApiResponses.auth)
+    apiClient.register = vi.fn().mockResolvedValue(mockApiResponses.auth)
+    apiClient.getProfile = vi.fn().mockResolvedValue(mockApiResponses.user)
   })
 
   test('renders login form correctly', async () => {

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { apiClient } from '@/lib/api';
@@ -97,14 +97,28 @@ describe('NotificationsPage', () => {
 
   describe('Initial Load', () => {
     it('should render page title and loading state initially', async () => {
-      render(<NotificationsPage />);
+      // Make the API call take some time to see loading state
+      (apiClient.getNotifications as any).mockImplementation(() => 
+        new Promise(resolve => setTimeout(() => resolve(mockApiResponse), 100))
+      );
+
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       expect(screen.getByText('Notifications')).toBeInTheDocument();
       expect(screen.getByText('Loading notifications...')).toBeInTheDocument();
+      
+      // Wait for loading to complete
+      await waitFor(() => {
+        expect(screen.queryByText('Loading notifications...')).not.toBeInTheDocument();
+      });
     });
 
     it('should fetch and display notifications on mount', async () => {
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(apiClient.getNotifications).toHaveBeenCalledWith(1, 20, false);
@@ -125,7 +139,9 @@ describe('NotificationsPage', () => {
         total: 0,
       });
 
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('No notifications yet')).toBeInTheDocument();
@@ -136,7 +152,9 @@ describe('NotificationsPage', () => {
 
   describe('Filtering', () => {
     it('should have filter tabs for All and Unread', async () => {
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('All')).toBeInTheDocument();
@@ -145,13 +163,17 @@ describe('NotificationsPage', () => {
     });
 
     it('should filter notifications when Unread tab is clicked', async () => {
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('All')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('Unread'));
+      await act(async () => {
+        fireEvent.click(screen.getByText('Unread'));
+      });
       
       await waitFor(() => {
         expect(apiClient.getNotifications).toHaveBeenCalledTimes(2);
@@ -162,7 +184,9 @@ describe('NotificationsPage', () => {
 
   describe('Mark as Read Functionality', () => {
     it('should show Mark All as Read button when there are unread notifications', async () => {
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Mark All as Read')).toBeInTheDocument();
@@ -172,7 +196,9 @@ describe('NotificationsPage', () => {
     it('should mark individual notification as read when clicked', async () => {
       (apiClient.markNotificationRead as any).mockResolvedValue({ message: 'Success' });
 
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('New Follower')).toBeInTheDocument();
@@ -182,7 +208,9 @@ describe('NotificationsPage', () => {
       const unreadNotification = screen.getByText('New Follower').closest('[data-testid="notification-item"]');
       expect(unreadNotification).toBeInTheDocument();
       
-      fireEvent.click(unreadNotification!);
+      await act(async () => {
+        fireEvent.click(unreadNotification!);
+      });
       
       await waitFor(() => {
         expect(apiClient.markNotificationRead).toHaveBeenCalledWith(1);
@@ -192,13 +220,17 @@ describe('NotificationsPage', () => {
     it('should mark all notifications as read when Mark All as Read is clicked', async () => {
       (apiClient.markAllNotificationsRead as any).mockResolvedValue({ message: 'Success' });
 
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Mark All as Read')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('Mark All as Read'));
+      await act(async () => {
+        fireEvent.click(screen.getByText('Mark All as Read'));
+      });
       
       await waitFor(() => {
         expect(apiClient.markAllNotificationsRead).toHaveBeenCalled();
@@ -208,7 +240,9 @@ describe('NotificationsPage', () => {
 
   describe('Delete Functionality', () => {
     it('should show delete option in notification dropdown menu', async () => {
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('New Follower')).toBeInTheDocument();
@@ -216,7 +250,9 @@ describe('NotificationsPage', () => {
 
       // Click on more options button
       const moreButtons = screen.getAllByTestId('more-icon');
-      fireEvent.click(moreButtons[0]);
+      await act(async () => {
+        fireEvent.click(moreButtons[0]);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Delete')).toBeInTheDocument();
@@ -226,7 +262,9 @@ describe('NotificationsPage', () => {
     it('should delete notification when delete is clicked', async () => {
       (apiClient.deleteNotification as any).mockResolvedValue({ message: 'Success' });
 
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('New Follower')).toBeInTheDocument();
@@ -234,13 +272,17 @@ describe('NotificationsPage', () => {
 
       // Click on more options button and then delete
       const moreButtons = screen.getAllByTestId('more-icon');
-      fireEvent.click(moreButtons[0]);
+      await act(async () => {
+        fireEvent.click(moreButtons[0]);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Delete')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('Delete'));
+      await act(async () => {
+        fireEvent.click(screen.getByText('Delete'));
+      });
       
       await waitFor(() => {
         expect(apiClient.deleteNotification).toHaveBeenCalledWith(1);
@@ -256,7 +298,9 @@ describe('NotificationsPage', () => {
         has_next: true,
       });
 
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Next')).toBeInTheDocument();
@@ -270,13 +314,17 @@ describe('NotificationsPage', () => {
         has_next: true,
       });
 
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Next')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('Next'));
+      await act(async () => {
+        fireEvent.click(screen.getByText('Next'));
+      });
       
       await waitFor(() => {
         expect(apiClient.getNotifications).toHaveBeenCalledWith(2, 20, false);
@@ -286,7 +334,9 @@ describe('NotificationsPage', () => {
 
   describe('Notification Types and Icons', () => {
     it('should display correct icons for different notification types', async () => {
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByTestId('user-icon')).toBeInTheDocument(); // follow
@@ -296,7 +346,9 @@ describe('NotificationsPage', () => {
     });
 
     it('should show unread indicator for unread notifications', async () => {
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         // Should have unread indicators for notifications with is_read: false
@@ -310,7 +362,9 @@ describe('NotificationsPage', () => {
     it('should handle API errors gracefully', async () => {
       (apiClient.getNotifications as any).mockRejectedValue(new Error('API Error'));
 
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Failed to load notifications')).toBeInTheDocument();
@@ -320,14 +374,18 @@ describe('NotificationsPage', () => {
     it('should handle mark as read errors gracefully', async () => {
       (apiClient.markNotificationRead as any).mockRejectedValue(new Error('API Error'));
 
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('New Follower')).toBeInTheDocument();
       });
 
       const unreadNotification = screen.getByText('New Follower').closest('[data-testid="notification-item"]');
-      fireEvent.click(unreadNotification!);
+      await act(async () => {
+        fireEvent.click(unreadNotification!);
+      });
       
       // Should show error toast (mocked)
       await waitFor(() => {
@@ -338,7 +396,9 @@ describe('NotificationsPage', () => {
 
   describe('Time Formatting', () => {
     it('should display relative time for notifications', async () => {
-      render(<NotificationsPage />);
+      await act(async () => {
+        render(<NotificationsPage />);
+      });
       
       await waitFor(() => {
         // Should show relative time like "2d ago", etc.

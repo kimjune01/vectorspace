@@ -49,6 +49,11 @@ describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     
+    // Mock the login method to return proper auth response for auto-login
+    apiClient.login = vi.fn().mockResolvedValue(mockApiResponses.auth)
+    apiClient.register = vi.fn().mockResolvedValue(mockApiResponses.auth)
+    apiClient.getProfile = vi.fn().mockResolvedValue(mockUser)
+    
     // Create a proper localStorage mock that actually stores values
     const storage: Record<string, string> = {}
     const mockLocalStorage = {

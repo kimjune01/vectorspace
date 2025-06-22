@@ -10,6 +10,7 @@ from datetime import datetime
 
 class UserProfileResponse(BaseModel):
     """Response model for user profile."""
+    id: int
     username: str
     display_name: str
     bio: Optional[str] = None

@@ -73,6 +73,7 @@ async def get_user_profile(
         
         # Build profile response
         profile = UserProfileResponse(
+            id=user.id,
             username=user.username,
             display_name=user.display_name,
             bio=user.bio,

@@ -17,4 +17,5 @@ mkdir -p /app/chroma_db
 
 # Start the service
 echo "Starting Corpus service on port $CORPUS_PORT"
+export PYTHONPATH=/app:$PYTHONPATH
 source .venv/bin/activate && python main.py

@@ -85,7 +85,7 @@ export function ChatInterface({ conversationId, initialMessages = [], isTemporar
           if (exists) return prev;
           return [...prev, message];
         });
-        onNewMessage?.(message);
+        onNewMessage?.();
         
         // If this was a user message, set loading for AI response
         if (msgData.role === 'user') {

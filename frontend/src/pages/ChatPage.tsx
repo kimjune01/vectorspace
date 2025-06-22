@@ -9,7 +9,7 @@ import { ChatInterface } from '@/components/chat/ChatInterface';
 import { BookmarkButton } from '@/components/BookmarkButton';
 import { HumanChatPanel } from '@/components/HumanChatPanel';
 import { CollaborationToolbar } from '@/components/collaboration/CollaborationToolbar';
-import { ArrowLeft, Settings, Archive, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Archive, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import type { ConversationDetail } from '@/types/api';
@@ -287,9 +287,6 @@ export default function ChatPage() {
             {/* Owner controls */}
             {isOwner && (
               <>
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
-                  <Settings className="h-4 w-4" />
-                </Button>
                 <Button variant="outline" size="sm" onClick={handleToggleVisibility}>
                   {conversation.is_public ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>

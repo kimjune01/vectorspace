@@ -18,11 +18,11 @@ def get_vector_db() -> VectorDBService:
 
 
 @lru_cache()
-def get_summarizer() -> SummarizerService:
-    """Get summarization service instance."""
+def get_summarizer() -> Optional[SummarizerService]:
+    """Get summarization service instance (optional)."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        raise ValueError("OPENAI_API_KEY environment variable is required")
+        return None
     
     return SummarizerService(
         api_key=api_key,
@@ -31,11 +31,15 @@ def get_summarizer() -> SummarizerService:
 
 
 @lru_cache()
-def get_scraper_manager() -> ScraperManager:
-    """Get scraper manager instance."""
+def get_scraper_manager() -> Optional[ScraperManager]:
+    """Get scraper manager instance (optional)."""
+    summarizer = get_summarizer()
+    if not summarizer:
+        return None
+        
     return ScraperManager(
         vector_db=get_vector_db(),
-        summarizer=get_summarizer(),
+        summarizer=summarizer,
         scraper_interval_minutes=int(os.getenv("SCRAPER_INTERVAL_MINUTES", "60")),
         max_posts_per_scrape=int(os.getenv("MAX_POSTS_PER_SCRAPE", "100")),
         min_post_score=int(os.getenv("MIN_POST_SCORE", "10"))

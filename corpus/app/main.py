@@ -26,11 +26,15 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     logger.info("Starting Corpus service...")
     
+    scraper_manager = None
     try:
-        # Initialize and start the scraper manager
+        # Initialize and start the scraper manager (optional)
         scraper_manager = get_scraper_manager()
-        scraper_manager.start_scheduler()
-        logger.info("Background scraper scheduler started")
+        if scraper_manager:
+            scraper_manager.start_scheduler()
+            logger.info("Background scraper scheduler started")
+        else:
+            logger.warning("Background scraper disabled - OPENAI_API_KEY not provided")
         
         yield
         
@@ -38,9 +42,9 @@ async def lifespan(app: FastAPI):
         # Cleanup
         logger.info("Shutting down Corpus service...")
         try:
-            scraper_manager = get_scraper_manager()
-            scraper_manager.stop_scheduler()
-            logger.info("Background scraper scheduler stopped")
+            if scraper_manager:
+                scraper_manager.stop_scheduler()
+                logger.info("Background scraper scheduler stopped")
         except Exception as e:
             logger.error(f"Error during shutdown: {e}")
 

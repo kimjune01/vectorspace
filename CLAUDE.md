@@ -129,9 +129,11 @@ uv run python seed_database.py # Seed database with test user (testuser/testpass
 - [x] Auto-archiving after 24h inactivity
 - [x] WebSocket for real-time chat with message deduplication
 - [x] Background task processing
-- [x] Comprehensive test suite (229 tests, production-ready)
+- [x] **Curation system**: Save conversations, create collections, organize content
+- [x] Comprehensive test suite (240+ tests, production-ready)
 - [x] Production-ready performance optimizations
 - [x] Railway health check endpoint (`/api/health`)
+- [x] **Environment-aware database configuration** for testing and production
 
 ### Frontend Features ✅
 - [x] Component library migration from T3 project (shadcn/ui components)
@@ -140,13 +142,14 @@ uv run python seed_database.py # Seed database with test user (testuser/testpass
 - [x] Semantic search interface with real-time results
 - [x] AI chat interface with WebSocket integration and streaming
 - [x] User profile pages with image upload and editing
+- [x] **Saved conversations page**: Complete curation interface with collections
 - [x] Responsive design and mobile support
 - [x] Protected routes and authentication context
 - [x] Modern UI with Tailwind CSS design system
 - [x] State management with TanStack Query and Zustand
 - [x] Comprehensive debugging tools (API logger, debug panel, enhanced errors)
 - [x] Development automation (auto-login, database seeding)
-- [x] Robust test suite (83/101 tests passing, fixed React act() warnings and auto-login failures)
+- [x] **Comprehensive E2E test suite**: Playwright tests for all major workflows
 - [x] WebSocket message deduplication and improved error handling
 
 ## Project Status
@@ -154,15 +157,16 @@ uv run python seed_database.py # Seed database with test user (testuser/testpass
 **All Features Complete** ✅
 
 VectorSpace is now a fully functional conversation discovery platform with:
-- Complete backend API (229+ tests, production-ready)
-- Complete frontend application (React + TypeScript, 83/101 tests passing)
-- **External content discovery via corpus microservice (Hacker News integration)**
-- Real-time chat with WebSocket integration
-- Semantic search and conversation discovery
-- User authentication and profile management
-- Responsive design for all screen sizes
-- Comprehensive debugging and development tools for efficient troubleshooting
-- Robust test infrastructure with resolved React act() warnings and improved test stability
+- **Complete backend API** (240+ tests, production-ready)
+- **Complete frontend application** (React + TypeScript with comprehensive E2E testing)
+- **Curation system**: Save conversations, create collections, organize content
+- **External content discovery** via corpus microservice (Hacker News integration)
+- **Real-time chat** with WebSocket integration and streaming responses
+- **Semantic search** and conversation discovery with vector embeddings
+- **User authentication** and profile management with JWT tokens
+- **Responsive design** for all screen sizes with mobile-first approach
+- **Comprehensive debugging tools** for efficient development and troubleshooting
+- **Production-ready infrastructure** with Railway deployment and health monitoring
 
 ## Debugging & Development Features
 
@@ -194,4 +198,18 @@ VectorSpace is now a fully functional conversation discovery platform with:
 - **Auto-login Failures**: Resolved by properly mocking `AuthResponse` structure with `user` property
 - **Missing Test Wrappers**: Added `AuthProvider` and `BrowserRouter` wrappers to component tests
 - **API Mock Completeness**: Enhanced mocks to include all required API methods (`discoverConversations`, etc.)
-- **Test Stability**: Improved from 85/101 to 83/101 passing tests with better error handling
+- **Test Stability**: Comprehensive test coverage with both unit and E2E testing
+
+### Curation System Testing (Latest)
+- **Backend API Tests**: Complete test suite for all curation endpoints (`tests/test_curation_api.py`)
+  - Saved conversations CRUD operations
+  - Collections management and organization
+  - Authentication and authorization testing
+  - Pagination and filtering functionality
+- **Frontend E2E Tests**: Playwright test suites for user workflows
+  - Saved conversations page testing (`tests/e2e/saved-conversations.spec.ts`)
+  - Collections management testing (`tests/e2e/collections.spec.ts`)
+  - Authentication flow verification
+  - Component interaction testing
+- **Database Environment Handling**: Fixed DATABASE_URL requirements for test environments
+- **Component Test Attributes**: Added proper `data-testid` attributes for reliable E2E testing

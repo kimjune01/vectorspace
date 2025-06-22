@@ -9,6 +9,8 @@ This directory contains comprehensive Playwright tests that verify all social fe
 - **`user-profiles.spec.ts`** - User profiles, follow system, profile management
 - **`semantic-search.spec.ts`** - Search functionality, filters, trending topics
 - **`auth-enhanced.spec.ts`** - Authentication workflows, session management, navigation
+- **`saved-conversations.spec.ts`** - Saved conversations management, filtering, editing
+- **`collections.spec.ts`** - Collections creation, organization, sharing
 
 ### Advanced Social Features Tests
 - **`presence-system.spec.ts`** - Real-time presence, scroll tracking, multi-user interactions
@@ -97,6 +99,7 @@ The tests are organized into different Playwright projects for optimal execution
 | **Real-time Presence** | Comprehensive | Multi-user + Performance | ✅ Complete |
 | **Human Connections** | Complete | Complete + Collections | ✅ Complete |
 | **Conversation Discovery** | Complete | Complete + Integration | ✅ Complete |
+| **Curation System** | Not Covered | Complete E2E Testing | ✅ Enhanced |
 | **Multi-user Interactions** | Basic | Comprehensive + Stress | ✅ Enhanced |
 | **Performance Testing** | Benchmarks | Detailed Metrics | ✅ Enhanced |
 | **Integration Workflows** | Round-trip | Complete Journeys | ✅ Enhanced |
@@ -243,7 +246,7 @@ pnpm exec playwright show-report
 
 ## Coverage Metrics
 
-**Total Test Scenarios**: 85+ test cases
+**Total Test Scenarios**: 100+ test cases
 **Feature Coverage**: 100% of Cucumber scenarios + enhancements
 **Browser Coverage**: Chromium, Firefox, WebKit, Mobile
 **Performance Benchmarks**: 9 key metrics

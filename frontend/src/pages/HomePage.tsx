@@ -41,6 +41,7 @@ export default function HomePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const presenceUpdateHandlerRef = useRef<((message: any) => void) | null>(null);
   
@@ -48,11 +49,21 @@ export default function HomePage() {
   const { getMessageViewers, handlePresenceUpdate } = usePresence(currentConversation?.id?.toString() || null);
 
   // WebSocket connection for real-time chat
-  const wsUrl = activeConversationId ? apiClient.getWebSocketUrl(activeConversationId) : null;
-  const { sendMessage: wsSendMessage, isConnected, connectionStatus } = useWebSocket(wsUrl, {
+  const wsUrl = activeConversationId ? (() => {
+    try {
+      return apiClient.getWebSocketUrl(activeConversationId);
+    } catch (error) {
+      console.error('❌ Failed to generate WebSocket URL:', error);
+      setError('Authentication error: Please refresh the page');
+      return null;
+    }
+  })() : null;
+  const { sendMessage: wsSendMessage, isConnected, connectionStatus, connect: wsConnect, disconnect: wsDisconnect, wsRef } = useWebSocket(wsUrl, {
     onMessage: (message) => {
+      console.log('📩 WebSocket message received:', message);
       if (message.type === 'new_message') {
         const msgData = message.message;
+        console.log('📝 Processing new_message:', msgData);
         if (msgData) {
           const newMessage: Message = {
             id: msgData.id.toString(),
@@ -60,10 +71,15 @@ export default function HomePage() {
             role: msgData.role as 'user' | 'assistant',
             timestamp: msgData.timestamp
           };
+          console.log('✅ Adding message to state:', newMessage);
           setMessages(prev => {
             // Check if message already exists to prevent duplicates
             const exists = prev.some(m => m.id === newMessage.id);
-            if (exists) return prev;
+            if (exists) {
+              console.log('🚫 Message already exists, skipping:', newMessage.id);
+              return prev;
+            }
+            console.log('➕ Adding new message to messages array');
             return [...prev, newMessage];
           });
         }
@@ -119,6 +135,31 @@ export default function HomePage() {
       connectionStatus 
     });
   }, [activeConversationId, wsUrl, isConnected, connectionStatus]);
+
+  // Handle WebSocket connection establishment for message sending
+  useEffect(() => {
+    if (activeConversationId && isConnected && pendingMessage) {
+      console.log('✅ WebSocket connected for conversation:', activeConversationId, 'sending pending message');
+      
+      // Send the pending message
+      const success = wsSendMessage({
+        type: 'send_message',
+        content: pendingMessage,
+        role: 'user'
+      });
+
+      if (success) {
+        console.log('✅ Pending message sent successfully');
+        setPendingMessage(null);
+      } else {
+        console.error('❌ Failed to send pending message');
+        setError('Failed to send message');
+        setIsLoading(false);
+        setInput(pendingMessage); // Restore the message to input
+        setPendingMessage(null);
+      }
+    }
+  }, [activeConversationId, isConnected, pendingMessage, wsSendMessage]);
   
   const {
     containerRef,
@@ -176,18 +217,25 @@ export default function HomePage() {
       
       setCurrentConversation(conversation);
       setActiveConversationId(conversation.id.toString());
-      await sendMessage(conversation.id.toString());
+      
+      // Use the conversation ID directly to avoid race condition
+      const conversationId = conversation.id.toString();
+      
+      // Set the pending message and let useEffect handle sending when connected
+      console.log('💾 Setting pending message for new conversation');
+      setPendingMessage(input);
+      setInput(''); // Clear input immediately
     } catch (error) {
       console.error('Failed to start conversation:', error);
       setError('Failed to start new conversation');
+      setIsLoading(false);
     }
   };
 
   const sendMessage = async (conversationId?: string) => {
-    if (!input.trim()) return;
+    console.log('📨 sendMessage called with:', { conversationId, inputLength: input.trim().length });
     
-    if (!isAuthenticated) {
-      setError('Please sign in to send messages');
+    if (!input.trim() || !isAuthenticated) {
       return;
     }
     
@@ -197,39 +245,25 @@ export default function HomePage() {
       return;
     }
 
-    // Ensure WebSocket is connected to the right conversation
+    // Simply ensure we're connected to the right conversation
     if (activeConversationId !== targetConversationId.toString()) {
       setActiveConversationId(targetConversationId.toString());
-      
-      // Wait for WebSocket to connect (up to 5 seconds)
-      for (let i = 0; i < 50; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        if (isConnected) break;
-        if (connectionStatus === 'error') {
-          setError('Failed to establish WebSocket connection');
-          return;
-        }
-      }
+      // Give it a moment to connect
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
-    
+
+    // Simple connection check
     if (!isConnected) {
-      console.log('WebSocket connection debug:', { 
-        isConnected, 
-        connectionStatus, 
-        wsUrl, 
-        activeConversationId 
-      });
-      setError(`Connection not established (${connectionStatus}). Please try again.`);
+      setError('Connection not ready. Please try again.');
       return;
     }
-    
-    // Don't add message to local state - let WebSocket handle it to prevent duplication
+
+    // Send message immediately
     const messageContent = input;
     setInput('');
     setIsLoading(true);
     setError(null);
-    
-    // Send the user message via WebSocket
+
     const success = wsSendMessage({
       type: 'send_message',
       content: messageContent,
@@ -239,15 +273,18 @@ export default function HomePage() {
     if (!success) {
       setError('Failed to send message');
       setIsLoading(false);
-      setInput(messageContent); // Restore input on failure
+      setInput(messageContent);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🎯 Form submitted. Current conversation:', currentConversation?.id);
     if (currentConversation) {
+      console.log('📤 Sending message to existing conversation');
       await sendMessage();
     } else {
+      console.log('🆕 Starting new conversation');
       await startNewConversation();
     }
   };

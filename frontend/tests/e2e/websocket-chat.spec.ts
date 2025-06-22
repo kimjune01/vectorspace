@@ -57,6 +57,12 @@ test.describe('WebSocket Chat Functionality', () => {
     // Click the send button
     await sendButton.click();
     
+    // Wait for either success or stable error state
+    await Promise.race([
+      page.getByText(testMessage).waitFor({ state: 'visible', timeout: 8000 }),
+      page.locator('text="Failed to establish connection"').waitFor({ state: 'hidden', timeout: 8000 })
+    ]);
+    
     // Wait for the message to appear in the chat
     await expect(page.getByText(testMessage)).toBeVisible({ timeout: 10000 });
     

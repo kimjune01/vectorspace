@@ -58,6 +58,7 @@ export function useWebSocket(url: string | null, options: UseWebSocketOptions = 
       return;
     }
 
+    console.log('🔌 Attempting to connect to WebSocket:', url);
     setConnectionStatus('connecting');
 
     try {
@@ -105,6 +106,7 @@ export function useWebSocket(url: string | null, options: UseWebSocketOptions = 
       };
 
       ws.onerror = (error) => {
+        console.error('🔌 WebSocket error:', error);
         setConnectionStatus('error');
         onError?.(error);
       };
@@ -130,19 +132,48 @@ export function useWebSocket(url: string | null, options: UseWebSocketOptions = 
   };
 
   const sendMessage = (message: any) => {
+    console.log('🔌 useWebSocket sendMessage called with:', message);
+    console.log('🔌 WebSocket state:', { 
+      exists: !!wsRef.current, 
+      readyState: wsRef.current?.readyState,
+      OPEN: WebSocket.OPEN 
+    });
+    
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
-      return true;
+      console.log('🔌 WebSocket is OPEN, sending message...');
+      try {
+        wsRef.current.send(JSON.stringify(message));
+        console.log('🔌 Message sent successfully');
+        return true;
+      } catch (error) {
+        console.error('🔌 Error sending message:', error);
+        return false;
+      }
+    } else {
+      console.log('🔌 WebSocket not ready - readyState:', wsRef.current?.readyState);
+      return false;
     }
-    return false;
   };
 
   useEffect(() => {
+    console.log('🔌 useWebSocket useEffect triggered, url:', url);
+    
+    // Don't reconnect if we're already connected to the same URL
+    if (url && wsRef.current?.url === url && wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log('🔌 Already connected to same URL, skipping reconnection');
+      return;
+    }
+    
     if (url) {
+      console.log('🔌 Connecting to URL:', url);
       connect();
+    } else {
+      console.log('🔌 No URL, disconnecting');
+      disconnect();
     }
 
     return () => {
+      console.log('🔌 useWebSocket cleanup, disconnecting');
       disconnect();
     };
   }, [url]);
@@ -161,5 +192,6 @@ export function useWebSocket(url: string | null, options: UseWebSocketOptions = 
     sendMessage,
     connect,
     disconnect,
+    wsRef, // Expose the ref for debugging
   };
 }

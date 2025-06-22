@@ -515,7 +515,10 @@ export class ApiClient {
 
   // WebSocket URL helper
   getWebSocketUrl(conversationId: string): string {
+    console.log('🔗 getWebSocketUrl called:', { conversationId, hasToken: !!this.token });
+    
     if (!this.token) {
+      console.error('❌ No authentication token available for WebSocket');
       throw new Error('Authentication token required for WebSocket connection');
     }
     
@@ -534,7 +537,9 @@ export class ApiClient {
       }
     }
     
-    return `${wsBaseUrl}/conversations/${conversationId}?token=${encodeURIComponent(this.token)}`;
+    const finalUrl = `${wsBaseUrl}/conversations/${conversationId}?token=${encodeURIComponent(this.token)}`;
+    console.log('🔗 Generated WebSocket URL:', finalUrl);
+    return finalUrl;
   }
 }
 

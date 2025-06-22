@@ -50,7 +50,7 @@ class UserService:
             return None
         
         # Get user statistics
-        stats = await self._get_user_stats(user.id)
+        stats = await self.get_user_stats(user.id)
         
         # Get recent conversations (respecting privacy settings)
         recent_conversations = await self._get_recent_conversations(
@@ -59,6 +59,7 @@ class UserService:
         )
         
         return UserProfileResponse(
+            id=user.id,
             username=user.username,
             display_name=user.display_name,
             bio=user.bio,
@@ -137,7 +138,7 @@ class UserService:
             logger.error(f"Failed to process profile image for user {user.username}: {e}")
             raise ValueError("Invalid image format or processing failed")
     
-    async def _get_user_stats(self, user_id: int) -> UserStats:
+    async def get_user_stats(self, user_id: int) -> UserStats:
         """Get user statistics."""
         # Total conversation count
         total_count_result = await self.db.execute(

@@ -84,7 +84,7 @@ async def get_my_profile(
         user_service = UserService(db)
         
         # Get user stats with correct conversation count
-        stats = await user_service._get_user_stats(current_user.id)
+        stats = await user_service.get_user_stats(current_user.id)
         
         # Get all conversations for the user (including hidden)
         conversations_result = await db.execute(

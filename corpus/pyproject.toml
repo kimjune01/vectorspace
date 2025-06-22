@@ -5,7 +5,7 @@ description = "External content discovery microservice for VectorSpace"
 authors = [
     {name = "VectorSpace Team"}
 ]
-readme = "DEPLOYMENT.md"
+# readme = "DEPLOYMENT.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.104.1",

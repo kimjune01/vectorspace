@@ -95,7 +95,8 @@ if __name__ == "__main__":
     import uvicorn
     
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("CORPUS_PORT", "8001"))
+    # Railway uses PORT, fallback to CORPUS_PORT for local development
+    port = int(os.getenv("PORT") or os.getenv("CORPUS_PORT", "8001"))
     debug = os.getenv("DEBUG", "false").lower() == "true"
     
     logger.info(f"Starting Corpus service on {host}:{port}")

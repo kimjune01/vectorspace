@@ -131,6 +131,12 @@ backend/chroma/
 corpus/chroma_db/
 corpus/chroma/
 
+# Corpus microservice Python cache
+corpus/__pycache__/
+corpus/**/__pycache__/
+corpus/*.py[cod]
+corpus/**/*.py[cod]
+
 # Database dumps
 backend/*.sql
 backend/*.dump

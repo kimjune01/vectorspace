@@ -27,11 +27,10 @@ test.describe('Frontend-Only Production Tests', () => {
   test('navigation elements exist', async ({ page }) => {
     await page.goto('/');
     
-    // Should have some navigation or branding
-    const hasNavigation = await page.locator('nav, header, [data-testid="navigation"]').isVisible().catch(() => false);
-    const hasBranding = await page.locator('text=VectorSpace, text=vectorspace, [alt*="logo"], [alt*="Logo"]').isVisible().catch(() => false);
+    // Wait for main content to load
+    await expect(page.locator('main')).toBeVisible();
     
-    // At least one should be present
-    expect(hasNavigation || hasBranding).toBeTruthy();
+    // The VectorSpace heading should be present (this is our "branding")
+    await expect(page.getByRole('heading', { name: 'VectorSpace', level: 1 })).toBeVisible();
   });
 });

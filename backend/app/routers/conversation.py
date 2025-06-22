@@ -256,10 +256,23 @@ async def create_message(
     
     await db.commit()
     
-    # Check if we've crossed a 1000-token milestone for summary regeneration
+    # Generate title after first message or check if we've crossed a 1000-token milestone for summary regeneration
+    message_count = len(all_messages)
     previous_milestone = previous_token_count // 1000
     current_milestone = total_tokens // 1000
     
+    # Generate title after first message
+    if message_count == 1:
+        try:
+            from app.services.title_service import title_service
+            await title_service.update_conversation_title(conversation_id, db, force_update=False)
+        except Exception as e:
+            # Log error but don't fail the message creation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to generate title for conversation {conversation_id}: {e}")
+    
+    # Check for summary regeneration at token milestones
     if current_milestone > previous_milestone and total_tokens >= 1000:
         # Regenerate summary at milestone
         try:

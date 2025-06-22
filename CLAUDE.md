@@ -127,10 +127,11 @@ uv run python seed_database.py # Seed database with test user (testuser/testpass
 - [x] PII filtering for public conversation summaries
 - [x] Auto-summarization at 1500+ tokens
 - [x] Auto-archiving after 24h inactivity
-- [x] WebSocket for real-time chat
+- [x] WebSocket for real-time chat with message deduplication
 - [x] Background task processing
 - [x] Comprehensive test suite (229 tests, production-ready)
 - [x] Production-ready performance optimizations
+- [x] Railway health check endpoint (`/api/health`)
 
 ### Frontend Features ✅
 - [x] Component library migration from T3 project (shadcn/ui components)
@@ -146,6 +147,7 @@ uv run python seed_database.py # Seed database with test user (testuser/testpass
 - [x] Comprehensive debugging tools (API logger, debug panel, enhanced errors)
 - [x] Development automation (auto-login, database seeding)
 - [x] Robust test suite (82/83 tests passing, fixed infinite loops and React act() warnings)
+- [x] WebSocket message deduplication and improved error handling
 
 ## Project Status
 

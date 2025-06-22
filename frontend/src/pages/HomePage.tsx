@@ -17,6 +17,7 @@ import { MessageSquare, Send, User, Menu, LogOut, Loader2, AlertTriangle, Settin
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import type { Conversation } from '@/types';
 import EnhancedSidebar from '@/components/layout/EnhancedSidebar';
 import PresenceIndicator from '@/components/PresenceIndicator';
@@ -39,12 +40,75 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const presenceUpdateHandlerRef = useRef<((message: any) => void) | null>(null);
   
   // Presence and viewport tracking
   const { getMessageViewers, handlePresenceUpdate } = usePresence(currentConversation?.id?.toString() || null);
+
+  // WebSocket connection for real-time chat
+  const wsUrl = activeConversationId ? apiClient.getWebSocketUrl(activeConversationId) : null;
+  const { sendMessage: wsSendMessage, isConnected } = useWebSocket(wsUrl, {
+    onMessage: (message) => {
+      if (message.type === 'new_message') {
+        const msgData = message.message;
+        if (msgData) {
+          const newMessage: Message = {
+            id: msgData.id.toString(),
+            content: msgData.content,
+            role: msgData.role as 'user' | 'assistant',
+            timestamp: msgData.timestamp
+          };
+          setMessages(prev => {
+            // Check if message already exists to prevent duplicates
+            const exists = prev.some(m => m.id === newMessage.id);
+            if (exists) return prev;
+            return [...prev, newMessage];
+          });
+        }
+      } else if (message.type === 'ai_response_chunk') {
+        // Handle streaming AI response
+        setMessages(prev => {
+          const lastMessage = prev[prev.length - 1];
+          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.id === message.message_id) {
+            // Append to existing AI message
+            return prev.map(msg => 
+              msg.id === message.message_id 
+                ? { ...msg, content: msg.content + message.content }
+                : msg
+            );
+          } else {
+            // Create new AI message
+            return [...prev, {
+              id: message.message_id || Date.now().toString(),
+              content: message.content || '',
+              role: 'assistant',
+              timestamp: new Date().toISOString()
+            }];
+          }
+        });
+      } else if (message.type === 'ai_response_complete') {
+        console.log('AI response completed');
+        setIsLoading(false);
+      } else if (message.type === 'error') {
+        setError(message.content || 'An error occurred');
+        setIsLoading(false);
+      } else if (message.type === 'presence_update' || message.type === 'scroll_update') {
+        // Handle presence and scroll updates
+        presenceUpdateHandlerRef.current?.(message);
+      } else if (message.type === 'connection_established') {
+        console.log('WebSocket connection established:', message);
+      }
+    },
+    onError: () => {
+      setError('Connection error occurred');
+    },
+    onClose: () => {
+      console.log('WebSocket disconnected');
+      setIsLoading(false);
+    }
+  });
   
   const {
     containerRef,
@@ -56,13 +120,13 @@ export default function HomePage() {
     conversationId: currentConversation?.id?.toString() || null,
     onViewportChange: (messageIndex, messageId) => {
       // Send scroll position update via WebSocket
-      if (ws && messageIndex !== null && messageId !== null) {
-        ws.send(JSON.stringify({
+      if (isConnected && messageIndex !== null && messageId !== null) {
+        wsSendMessage({
           type: 'scroll_update',
           current_message_index: messageIndex,
           current_message_id: messageId,
           timestamp: Date.now()
-        }));
+        });
       }
     }
   });
@@ -121,6 +185,18 @@ export default function HomePage() {
       await startNewConversation();
       return;
     }
+
+    // Ensure WebSocket is connected to the right conversation
+    if (activeConversationId !== targetConversationId.toString()) {
+      setActiveConversationId(targetConversationId.toString());
+      // Wait a moment for WebSocket to connect
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    if (!isConnected) {
+      setError('Connection not established. Please try again.');
+      return;
+    }
     
     // Don't add message to local state - let WebSocket handle it to prevent duplication
     const messageContent = input;
@@ -128,95 +204,17 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
     
-    try {
-      // Connect to WebSocket for real-time AI responses
-      const wsUrl = apiClient.getWebSocketUrl(targetConversationId.toString());
-      const websocket = new WebSocket(wsUrl);
-      
-      websocket.onopen = () => {
-        console.log('WebSocket connected');
-        setWs(websocket);
-        
-        // Send the user message
-        websocket.send(JSON.stringify({
-          type: 'send_message',
-          content: messageContent,
-          role: 'user'
-        }));
-      };
-      
-      websocket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('WebSocket message received:', data);
-          
-          if (data.type === 'new_message') {
-            const message = data.message;
-            const newMessage: Message = {
-              id: message.id.toString(),
-              content: message.content,
-              role: message.role,
-              timestamp: message.timestamp
-            };
-            setMessages(prev => {
-              // Check if message already exists to prevent duplicates
-              const exists = prev.some(m => m.id === newMessage.id);
-              if (exists) return prev;
-              return [...prev, newMessage];
-            });
-          } else if (data.type === 'ai_response_chunk') {
-            // Handle streaming AI response
-            setMessages(prev => {
-              const lastMessage = prev[prev.length - 1];
-              if (lastMessage && lastMessage.role === 'assistant' && lastMessage.id === data.message_id) {
-                // Append to existing AI message
-                return prev.map(msg => 
-                  msg.id === data.message_id 
-                    ? { ...msg, content: msg.content + data.content }
-                    : msg
-                );
-              } else {
-                // Create new AI message
-                return [...prev, {
-                  id: data.message_id,
-                  content: data.content,
-                  role: 'assistant',
-                  timestamp: new Date().toISOString()
-                }];
-              }
-            });
-          } else if (data.type === 'ai_response_complete') {
-            console.log('AI response completed');
-            setIsLoading(false);
-          } else if (data.type === 'error') {
-            setError(data.message || 'An error occurred');
-            setIsLoading(false);
-          } else if (data.type === 'presence_update' || data.type === 'scroll_update') {
-            // Handle presence and scroll updates
-            presenceUpdateHandlerRef.current?.(data);
-          } else if (data.type === 'connection_established') {
-            console.log('WebSocket connection established:', data);
-          }
-        } catch (err) {
-          console.error('Failed to parse WebSocket message:', err);
-        }
-      };
-      
-      websocket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setError('Connection error occurred');
-      };
-      
-      websocket.onclose = () => {
-        console.log('WebSocket disconnected');
-        setWs(null);
-        setIsLoading(false);
-      };
-      
-    } catch (error) {
-      console.error('Failed to send message:', error);
+    // Send the user message via WebSocket
+    const success = wsSendMessage({
+      type: 'send_message',
+      content: messageContent,
+      role: 'user'
+    });
+
+    if (!success) {
       setError('Failed to send message');
       setIsLoading(false);
+      setInput(messageContent); // Restore input on failure
     }
   };
 
@@ -234,8 +232,7 @@ export default function HomePage() {
     setMessages([]);
     setInput('');
     setError(null);
-    ws?.close();
-    setWs(null);
+    setActiveConversationId(null); // This will disconnect WebSocket
     setIsSidebarOpen(false);
   };
 
@@ -243,8 +240,7 @@ export default function HomePage() {
     setCurrentConversation(conversation);
     setMessages([]);
     setError(null);
-    ws?.close();
-    setWs(null);
+    setActiveConversationId(conversation.id.toString()); // This will connect to new conversation's WebSocket
     setIsSidebarOpen(false);
     
     try {

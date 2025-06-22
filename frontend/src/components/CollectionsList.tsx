@@ -32,7 +32,7 @@ export function CollectionsList({ collections: propCollections, onCreateCollecti
   const loadCollections = async () => {
     try {
       setIsLoading(true);
-      const response = await apiClient.getMyCollections(1, 50);
+      const response = await apiClient.getMyCollections(1, 50) as any;
       setCollections(response.collections || []);
       setError(null);
     } catch (error: any) {

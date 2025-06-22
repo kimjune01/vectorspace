@@ -118,6 +118,7 @@ export function CollectionsList({ collections: propCollections, onCreateCollecti
               key={collection.id} 
               className="hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => onCollectionClick?.(collection)}
+              data-testid="collection-item"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">

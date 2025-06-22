@@ -67,7 +67,12 @@ async def save_conversation(
     await db.refresh(saved)
     
     # Load conversation details for response
-    await db.refresh(saved, ["conversation", "conversation.user"])
+    await db.refresh(saved)
+    # Load the conversation and its user separately
+    conversation = await db.get(Conversation, saved.conversation_id)
+    user = None
+    if conversation:
+        user = await db.get(User, conversation.user_id)
     
     return SavedConversationResponse(
         id=saved.id,
@@ -76,9 +81,9 @@ async def save_conversation(
         saved_at=saved.saved_at,
         tags=saved.tags,
         personal_note=saved.personal_note,
-        conversation_title=saved.conversation.title,
-        conversation_summary=saved.conversation.summary,
-        conversation_author=saved.conversation.user.username
+        conversation_title=conversation.title if conversation else "Unknown",
+        conversation_summary=conversation.summary_public if conversation else "No summary",
+        conversation_author=user.username if user else "Unknown"
     )
 
 
@@ -143,7 +148,7 @@ async def update_saved_conversation(
         tags=saved.tags,
         personal_note=saved.personal_note,
         conversation_title=saved.conversation.title,
-        conversation_summary=saved.conversation.summary,
+        conversation_summary=saved.conversation.summary_public,
         conversation_author=saved.conversation.user.username
     )
 
@@ -190,7 +195,7 @@ async def get_saved_conversations(
             tags=saved.tags,
             personal_note=saved.personal_note,
             conversation_title=saved.conversation.title,
-            conversation_summary=saved.conversation.summary,
+            conversation_summary=saved.conversation.summary_public,
             conversation_author=saved.conversation.user.username
         ))
     
@@ -449,7 +454,7 @@ async def get_collection_details(
             tags=saved.tags,
             personal_note=saved.personal_note,
             conversation_title=saved.conversation.title,
-            conversation_summary=saved.conversation.summary,
+            conversation_summary=saved.conversation.summary_public,
             conversation_author=saved.conversation.user.username
         ))
     

@@ -5,51 +5,61 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Require PostgreSQL - no SQLite fallback
+# Require PostgreSQL - no SQLite fallback, but allow tests to override
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-if not DATABASE_URL:
+if not DATABASE_URL and not os.getenv("TESTING"):
     raise ValueError(
         "DATABASE_URL environment variable is required. "
         "Please provide a PostgreSQL connection string."
     )
 
 # Convert Railway's postgres:// to postgresql+asyncpg:// for async support
-if DATABASE_URL.startswith("postgres://"):
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
     logger.info("Converted postgres:// URL to postgresql+asyncpg:// for async support")
 
-# Validate that we're using PostgreSQL
-if not DATABASE_URL.startswith(("postgresql://", "postgresql+asyncpg://")):
+# Validate that we're using PostgreSQL (skip validation in tests)
+if DATABASE_URL and not DATABASE_URL.startswith(("postgresql://", "postgresql+asyncpg://")):
     raise ValueError(
         f"Only PostgreSQL databases are supported. "
         f"DATABASE_URL must start with 'postgresql://' or 'postgresql+asyncpg://'. "
         f"Got: {DATABASE_URL[:30]}..."
     )
 
-# Create async engine with PostgreSQL-optimized settings
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=True if os.getenv("DEBUG") and not os.getenv("TESTING") else False,
-    pool_size=10,
-    max_overflow=20,
-    pool_recycle=3600,  # Recycle connections after 1 hour
-    pool_pre_ping=True,  # Validate connections before use
-)
-logger.info("Database engine configured for PostgreSQL")
+# Create async engine with PostgreSQL-optimized settings (conditionally for tests)
+if DATABASE_URL:
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=True if os.getenv("DEBUG") and not os.getenv("TESTING") else False,
+        pool_size=10,
+        max_overflow=20,
+        pool_recycle=3600,  # Recycle connections after 1 hour
+        pool_pre_ping=True,  # Validate connections before use
+    )
+else:
+    # Testing mode - engine will be created by tests
+    engine = None
+if DATABASE_URL:
+    logger.info("Database engine configured for PostgreSQL")
 
 # Create async session factory
-async_session = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False
-)
+if engine:
+    async_session = sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False
+    )
+else:
+    async_session = None
 
 # Create declarative base
 Base = declarative_base()
 
 async def get_db():
     """Dependency to get database session."""
+    if not async_session:
+        raise RuntimeError("Database not configured. Set DATABASE_URL environment variable.")
     async with async_session() as session:
         try:
             yield session

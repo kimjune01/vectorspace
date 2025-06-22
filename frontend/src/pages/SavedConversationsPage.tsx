@@ -307,7 +307,7 @@ export default function SavedConversationsPage() {
         ) : (
           <div className="space-y-4">
             {savedConversations.map((conv) => (
-              <Card key={conv.id} className="overflow-hidden">
+              <Card key={conv.id} className="overflow-hidden" data-testid="saved-conversation">
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">

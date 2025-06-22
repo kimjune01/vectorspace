@@ -177,3 +177,19 @@ async def test_conversations(db_session, test_user):
     for conversation in conversations:
         await db_session.refresh(conversation)
     return conversations
+
+
+@pytest_asyncio.fixture
+async def auth_client(test_user, override_get_db):
+    """Create an authenticated HTTP client for testing."""
+    from app.auth import create_access_token
+    from httpx import AsyncClient, ASGITransport
+    from app.main import app
+    
+    # Create access token for test user
+    access_token = create_access_token(data={"sub": test_user.username})
+    
+    # Create client with auth headers
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        client.headers.update({"Authorization": f"Bearer {access_token}"})
+        yield client

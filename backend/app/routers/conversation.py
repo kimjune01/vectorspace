@@ -12,6 +12,8 @@ from app.schemas.conversation import (
 )
 from app.services.vector_service import vector_service
 from app.services.summary_service import SummaryService
+from app.services.corpus_service import corpus_service
+from app.models.corpus import HNRecommendation
 from app.auth import get_current_user
 
 router = APIRouter()
@@ -840,3 +842,57 @@ async def regenerate_summary_and_title(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to regenerate summary and title: {str(e)}"
         )
+
+
+@router.get("/{conversation_id}/hn-recommendations", response_model=List[dict])
+async def get_hn_recommendations(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get Hacker News recommendations for a conversation based on its summary."""
+    # Verify conversation exists and user has access
+    conversation_result = await db.execute(
+        select(Conversation)
+        .where(Conversation.id == conversation_id)
+        .options(selectinload(Conversation.user))
+    )
+    conversation = conversation_result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+    
+    # Check access permissions
+    if not conversation.is_public and conversation.user_id != current_user.id:
+        # Check if user is a participant
+        participant_result = await db.execute(
+            select(ConversationParticipant)
+            .where(
+                and_(
+                    ConversationParticipant.conversation_id == conversation_id,
+                    ConversationParticipant.user_id == current_user.id
+                )
+            )
+        )
+        participant = participant_result.scalar_one_or_none()
+        
+        if not participant:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied"
+            )
+    
+    # Only return recommendations if conversation has a summary
+    if not conversation.summary_public or not conversation.summary_public.strip():
+        return []
+    
+    # Get recommendations from corpus service
+    recommendations = await corpus_service.get_hn_recommendations(
+        conversation.summary_public
+    )
+    
+    # Convert to dict format for response
+    return [rec.dict() for rec in recommendations]

@@ -20,6 +20,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useHNRecommendations } from '@/hooks/useHNRecommendations';
+import { HNRecommendations } from './HNRecommendations';
 import type { Conversation } from '@/types';
 import type { SearchResult } from '@/types/api';
 
@@ -37,15 +39,23 @@ export default function EnhancedDiscoverySidebar({
   const { user } = useAuth();
   const [similarConversations, setSimilarConversations] = useState<SearchResult[]>([]);
   const [recentConversations, setRecentConversations] = useState<SearchResult[]>([]);
-  const [trendingTopics, setTrendingTopics] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Use the new HN recommendations hook
+  const {
+    data: hnRecommendations = [],
+    isLoading: hnLoading,
+    error: hnError
+  } = useHNRecommendations(
+    currentConversation?.id || null,
+    !!currentConversation?.summary_public
+  );
 
   useEffect(() => {
     if (currentConversation?.summary_public) {
       fetchSimilarConversations();
     }
     fetchRecentConversations();
-    fetchHnTopics();
   }, [currentConversation]);
 
   const fetchSimilarConversations = async () => {
@@ -73,23 +83,6 @@ export default function EnhancedDiscoverySidebar({
     }
   };
 
-  const fetchHnTopics = async () => {
-    // Only fetch HN topics if conversation has been summarized
-    const conversationSummary = currentConversation?.summary_public;
-    if (!conversationSummary) {
-      setTrendingTopics([]); // Clear topics when no summary
-      return;
-    }
-    
-    try {
-      const response = await apiClient.getHnTopics(conversationSummary, 5);
-      setTrendingTopics(response.topics);
-    } catch (error) {
-      console.error('Failed to fetch HN topics:', error);
-      // Don't show fallback topics - only show when we have semantic similarity
-      setTrendingTopics([]);
-    }
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -138,17 +131,6 @@ export default function EnhancedDiscoverySidebar({
     </motion.div>
   );
 
-  const TrendingTopicBadge = ({ topic }: { topic: string }) => (
-    <Badge 
-      variant="secondary" 
-      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-      onClick={() => window.location.href = `/discover?q=${encodeURIComponent(topic)}`}
-      data-testid="trending-topic-badge"
-    >
-      <TrendingUp className="h-3 w-3 mr-1" />
-      {topic}
-    </Badge>
-  );
 
   return (
     <div className="w-80 border-l bg-background/50 flex flex-col h-full" data-testid="discovery-sidebar">
@@ -182,20 +164,12 @@ export default function EnhancedDiscoverySidebar({
             </div>
           )}
 
-          {/* HN Topics - only show when conversation is summarized */}
-          {currentConversation?.summary_public && trendingTopics.length > 0 && (
-            <div data-testid="hn-topics-section">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="h-4 w-4 text-orange-500" />
-                <h3 className="font-medium text-sm">From Hacker News</h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {trendingTopics.map((topic) => (
-                  <TrendingTopicBadge key={topic} topic={topic} />
-                ))}
-              </div>
-            </div>
-          )}
+          {/* HN Recommendations - only show when conversation is summarized */}
+          <HNRecommendations 
+            recommendations={hnRecommendations}
+            isLoading={hnLoading}
+            error={hnError}
+          />
 
           <Separator />
 

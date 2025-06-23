@@ -74,20 +74,20 @@ export default function EnhancedDiscoverySidebar({
   };
 
   const fetchHnTopics = async () => {
+    // Only fetch HN topics if conversation has been summarized
+    const conversationSummary = currentConversation?.summary_public;
+    if (!conversationSummary) {
+      setTrendingTopics([]); // Clear topics when no summary
+      return;
+    }
+    
     try {
-      // Use current conversation summary if available for semantic similarity
-      const conversationSummary = currentConversation?.summary_public;
-      
       const response = await apiClient.getHnTopics(conversationSummary, 5);
       setTrendingTopics(response.topics);
     } catch (error) {
       console.error('Failed to fetch HN topics:', error);
-      // Fallback to static topics if API fails
-      const fallbackTopics = [
-        'AI & Machine Learning', 'Startup Stories', 'Open Source',
-        'Programming Languages', 'Tech Industry'
-      ];
-      setTrendingTopics(fallbackTopics);
+      // Don't show fallback topics - only show when we have semantic similarity
+      setTrendingTopics([]);
     }
   };
 
@@ -181,18 +181,20 @@ export default function EnhancedDiscoverySidebar({
             </div>
           )}
 
-          {/* HN Topics */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="h-4 w-4 text-orange-500" />
-              <h3 className="font-medium text-sm">From Hacker News</h3>
+          {/* HN Topics - only show when conversation is summarized */}
+          {currentConversation?.summary_public && trendingTopics.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="h-4 w-4 text-orange-500" />
+                <h3 className="font-medium text-sm">From Hacker News</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {trendingTopics.map((topic) => (
+                  <TrendingTopicBadge key={topic} topic={topic} />
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {trendingTopics.map((topic) => (
-                <TrendingTopicBadge key={topic} topic={topic} />
-              ))}
-            </div>
-          </div>
+          )}
 
           <Separator />
 

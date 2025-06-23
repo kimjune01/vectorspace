@@ -380,83 +380,89 @@ async def get_collection_stats(
 
 @router.get("/hn-topics")
 async def get_hn_trending_topics(
-    current_conversation_summary: Optional[str] = None,
+    current_conversation_summary: str,
     limit: int = 5,
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get semantically similar topics from Hacker News content.
+    Get semantically similar topics from Hacker News content based on conversation summary.
     
-    If current_conversation_summary is provided, finds HN topics similar to the conversation.
-    Otherwise, returns popular/trending topics from HN.
+    Requires current_conversation_summary to find HN topics semantically similar to the conversation.
+    This ensures only relevant topics are shown after a conversation has been summarized.
     """
     try:
-        if current_conversation_summary:
-            # Find HN content similar to current conversation
-            search_request = {
-                "query_texts": [current_conversation_summary],
-                "collections": ["hackernews"],
-                "limit": limit * 2,  # Get more results to extract diverse topics
-                "min_similarity": 0.6  # Lower threshold for broader topic discovery
-            }
-            
-            # Generate embedding for the conversation summary
-            try:
-                embedding = await ai_service.generate_embedding(current_conversation_summary)
-            except Exception as e:
-                logger.error(f"Failed to generate embedding for conversation: {e}")
-                # Fallback to general trending topics
-                return await _get_general_hn_topics(limit)
-            
-            # Search for similar HN content
-            corpus_search_request = {
-                "embedding": embedding,
-                "collections": ["hackernews"],
-                "limit": limit * 2,
-                "min_similarity": 0.6
-            }
-            
-            results = await proxy_corpus_request(
-                "/api/v1/similarity/search",
-                method="POST",
-                json_data=corpus_search_request
+        # Validate that conversation summary is provided and not empty
+        if not current_conversation_summary or not current_conversation_summary.strip():
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "Conversation summary is required for HN topic discovery",
+                    "type": "validation_error",
+                    "message": "This endpoint only shows HN topics when a conversation has been summarized"
+                }
             )
-            
-            # Extract topics from HN titles and summaries
-            topics = _extract_topics_from_hn_results(results.get("results", []), limit)
-        else:
-            # Get general trending topics from HN
-            topics = await _get_general_hn_topics(limit)
+        
+        # Find HN content similar to current conversation
+        search_request = {
+            "query_texts": [current_conversation_summary],
+            "collections": ["hackernews"],
+            "limit": limit * 2,  # Get more results to extract diverse topics
+            "min_similarity": 0.6  # Lower threshold for broader topic discovery
+        }
+        
+        # Generate embedding for the conversation summary
+        try:
+            embedding = await ai_service.generate_embedding(current_conversation_summary)
+        except Exception as e:
+            logger.error(f"Failed to generate embedding for conversation: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "error": "Failed to generate embedding for conversation summary",
+                    "type": "embedding_error",
+                    "debug": {"exception": str(e)}
+                }
+            )
+        
+        # Search for similar HN content
+        corpus_search_request = {
+            "embedding": embedding,
+            "collections": ["hackernews"],
+            "limit": limit * 2,
+            "min_similarity": 0.6
+        }
+        
+        results = await proxy_corpus_request(
+            "/api/v1/similarity/search",
+            method="POST",
+            json_data=corpus_search_request
+        )
+        
+        # Extract topics from HN titles and summaries
+        topics = _extract_topics_from_hn_results(results.get("results", []), limit)
         
         return {
             "topics": topics,
             "source": "hackernews",
-            "context": "semantic_similarity" if current_conversation_summary else "trending",
+            "context": "semantic_similarity",
             "debug": {
                 "user_id": current_user.id,
-                "has_context": bool(current_conversation_summary),
+                "conversation_summary_length": len(current_conversation_summary),
                 "topics_count": len(topics)
             }
         }
         
     except CorpusError as e:
         logger.error(f"Failed to get HN topics: {e.message}")
-        # Fallback to default topics if corpus service fails
-        fallback_topics = [
-            "AI & Machine Learning", "Startup Stories", "Open Source", 
-            "Programming Languages", "Tech Industry"
-        ][:limit]
-        
-        return {
-            "topics": fallback_topics,
-            "source": "fallback",
-            "context": "error_fallback",
-            "error": e.message,
-            "debug": {
-                "user_id": current_user.id,
-                "corpus_error": True
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "Corpus service unavailable for HN topic discovery",
+                "type": "corpus_service_error",
+                "message": "Unable to find semantically similar HN topics at this time",
+                "debug": e.details
             }
-        }
+        )
     except Exception as e:
         logger.error(f"Unexpected error getting HN topics: {str(e)}")
         raise HTTPException(
@@ -468,47 +474,6 @@ async def get_hn_trending_topics(
             }
         )
 
-async def _get_general_hn_topics(limit: int) -> List[str]:
-    """Get general trending topics from HN by analyzing recent popular posts."""
-    try:
-        # Get recent popular HN posts
-        stats = await proxy_corpus_request("/api/v1/admin/collections/hackernews/stats")
-        
-        # If we have stats, try to get a sample of recent posts
-        sample_request = {
-            "collections": ["hackernews"],
-            "limit": 20,  # Get more posts to analyze
-            "min_similarity": 0.0  # Get diverse content
-        }
-        
-        # Use a generic tech query to get recent popular content
-        embedding = await ai_service.generate_embedding("technology programming software development")
-        
-        corpus_search_request = {
-            "embedding": embedding,
-            "collections": ["hackernews"],
-            "limit": 20,
-            "min_similarity": 0.3
-        }
-        
-        results = await proxy_corpus_request(
-            "/api/v1/similarity/search",
-            method="POST",
-            json_data=corpus_search_request
-        )
-        
-        # Extract and return topics
-        return _extract_topics_from_hn_results(results.get("results", []), limit)
-        
-    except Exception as e:
-        logger.warning(f"Failed to get general HN topics, using fallback: {e}")
-        # Fallback topics based on common HN themes
-        fallback_topics = [
-            "AI & Machine Learning", "Startup Stories", "Open Source",
-            "Programming Languages", "Tech Industry", "Web Development",
-            "Cybersecurity", "Data Science", "DevOps", "Blockchain"
-        ]
-        return fallback_topics[:limit]
 
 def _extract_topics_from_hn_results(results: List[Dict], limit: int) -> List[str]:
     """Extract topic keywords from HN search results."""

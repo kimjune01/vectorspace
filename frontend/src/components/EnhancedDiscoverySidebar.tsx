@@ -45,7 +45,7 @@ export default function EnhancedDiscoverySidebar({
       fetchSimilarConversations();
     }
     fetchRecentConversations();
-    generateTrendingTopics();
+    fetchHnTopics();
   }, [currentConversation]);
 
   const fetchSimilarConversations = async () => {
@@ -73,17 +73,22 @@ export default function EnhancedDiscoverySidebar({
     }
   };
 
-  const generateTrendingTopics = () => {
-    // Simulate trending topics based on current conversation or general topics
-    const allTopics = [
-      'Machine Learning', 'Python Programming', 'React Hooks', 'TypeScript',
-      'AI Ethics', 'Climate Change', 'Quantum Computing', 'Web3',
-      'Data Science', 'Blockchain', 'Cybersecurity', 'DevOps',
-      'Neural Networks', 'API Design', 'Database Optimization'
-    ];
-    
-    const shuffled = allTopics.sort(() => 0.5 - Math.random());
-    setTrendingTopics(shuffled.slice(0, 5));
+  const fetchHnTopics = async () => {
+    try {
+      // Use current conversation summary if available for semantic similarity
+      const conversationSummary = currentConversation?.summary_public;
+      
+      const response = await apiClient.getHnTopics(conversationSummary, 5);
+      setTrendingTopics(response.topics);
+    } catch (error) {
+      console.error('Failed to fetch HN topics:', error);
+      // Fallback to static topics if API fails
+      const fallbackTopics = [
+        'AI & Machine Learning', 'Startup Stories', 'Open Source',
+        'Programming Languages', 'Tech Industry'
+      ];
+      setTrendingTopics(fallbackTopics);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -176,11 +181,11 @@ export default function EnhancedDiscoverySidebar({
             </div>
           )}
 
-          {/* Trending Topics */}
+          {/* HN Topics */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="h-4 w-4 text-orange-500" />
-              <h3 className="font-medium text-sm">Trending Topics</h3>
+              <h3 className="font-medium text-sm">From Hacker News</h3>
             </div>
             <div className="flex flex-wrap gap-2">
               {trendingTopics.map((topic) => (

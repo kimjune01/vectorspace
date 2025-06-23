@@ -4,7 +4,7 @@ import time
 from typing import Optional, Dict
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from jose import JWTError, jwt
 from app.database import get_db
 from app.models import User, Conversation, ConversationParticipant, Message
@@ -296,11 +296,27 @@ async def handle_send_message(
         conversation.token_count += message.token_count
         await db.commit()
         
-        # Check if conversation should be summarized (1500+ tokens)
-        if conversation.should_auto_archive() and not conversation.summary_raw:
+        # Check if this is the first AI message in the conversation
+        ai_message_count_result = await db.execute(
+            select(func.count(Message.id)).where(
+                Message.conversation_id == conversation_id,
+                Message.role == "assistant"
+            )
+        )
+        ai_message_count = ai_message_count_result.scalar()
+        
+        # Trigger immediate summarization on first AI message OR at 1500+ tokens
+        should_summarize = (
+            (ai_message_count == 1 and role == "assistant") or  # First AI message
+            (conversation.should_auto_archive() and not conversation.summary_raw)  # Original 1500+ token logic
+        )
+        
+        if should_summarize:
             from app.services.summary_service import summary_service
             old_title = conversation.title
-            await summary_service.check_and_generate_summary(conversation_id, db)
+            # Force generate summary for first AI message, otherwise use normal logic
+            force_generate = (ai_message_count == 1 and role == "assistant")
+            await summary_service.check_and_generate_summary(conversation_id, db, force_generate=force_generate)
             
             # Check if title was updated and broadcast the change
             await db.refresh(conversation)
@@ -479,10 +495,37 @@ async def handle_ai_response(connection_id: str, conversation_id: int, user_mess
             "conversation_tokens": conversation.token_count
         })
         
-        # Check if conversation should be summarized after AI response
-        if conversation.should_auto_archive() and not conversation.summary_raw:
+        # Check if this is the first AI message in the conversation
+        ai_message_count_result = await db.execute(
+            select(func.count(Message.id)).where(
+                Message.conversation_id == conversation_id,
+                Message.role == "assistant"
+            )
+        )
+        ai_message_count = ai_message_count_result.scalar()
+        
+        # Trigger immediate summarization on first AI message OR at 1500+ tokens
+        should_summarize = (
+            ai_message_count == 1 or  # First AI message
+            (conversation.should_auto_archive() and not conversation.summary_raw)  # Original 1500+ token logic
+        )
+        
+        if should_summarize:
             from app.services.summary_service import summary_service
-            await summary_service.check_and_generate_summary(conversation_id, db)
+            old_title = conversation.title
+            # Force generate summary for first AI message, otherwise use normal logic
+            force_generate = (ai_message_count == 1)
+            await summary_service.check_and_generate_summary(conversation_id, db, force_generate=force_generate)
+            
+            # Check if title was updated and broadcast the change
+            await db.refresh(conversation)
+            if conversation.title != old_title:
+                await websocket_manager.broadcast_to_conversation(conversation_id, {
+                    "type": "title_updated",
+                    "conversation_id": conversation_id,
+                    "new_title": conversation.title,
+                    "message": "Title updated based on conversation content"
+                })
         
     except Exception as e:
         logger.error(f"Error in AI response generation: {e}")

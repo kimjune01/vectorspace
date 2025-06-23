@@ -15,7 +15,8 @@ class SummaryService:
         self, 
         conversation_id: int, 
         db: AsyncSession,
-        update_title: bool = True
+        update_title: bool = True,
+        force_generate: bool = False
     ) -> Optional[str]:
         """Check if conversation needs summary and generate if required.
         
@@ -23,6 +24,7 @@ class SummaryService:
             conversation_id: ID of the conversation
             db: Database session
             update_title: Whether to update conversation title when summary is generated
+            force_generate: Whether to generate summary regardless of token count
         
         Returns the generated summary if one was created, None otherwise.
         """
@@ -36,8 +38,8 @@ class SummaryService:
         if conversation.summary_raw is not None:
             return conversation.summary_raw  # type: ignore
         
-        # Check if conversation has reached 1500 tokens
-        if not conversation.should_auto_archive():
+        # Check if conversation has reached 1500 tokens (unless forcing)
+        if not force_generate and not conversation.should_auto_archive():
             return None
         
         # Generate summary

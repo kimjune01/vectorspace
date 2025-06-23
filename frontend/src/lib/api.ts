@@ -471,6 +471,17 @@ export class ApiClient {
     return this.request<CorpusDebugStatus>(`/corpus/debug/status`);
   }
 
+  async getHnTopics(conversationSummary?: string, limit: number = 5): Promise<{ topics: string[], source: string, context: string }> {
+    const params = new URLSearchParams();
+    if (conversationSummary) {
+      params.append('current_conversation_summary', conversationSummary);
+    }
+    params.append('limit', limit.toString());
+    
+    const url = `/corpus/hn-topics${params.toString() ? `?${params.toString()}` : ''}`;
+    return this.request<{ topics: string[], source: string, context: string }>(url);
+  }
+
   // Collaboration endpoints
   async createPromptSuggestion(conversationId: number, data: {
     suggested_prompt: string;

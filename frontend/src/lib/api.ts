@@ -184,6 +184,13 @@ export class ApiClient {
     return this.request<User>('/users/me');
   }
 
+  async updateProfile(data: { display_name?: string; bio?: string }): Promise<User> {
+    return this.request<User>('/users/me/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
   // Conversation endpoints
   async getConversations(): Promise<ConversationsResponse> {
     const response = await this.request<ConversationsResponse>('/conversations/');

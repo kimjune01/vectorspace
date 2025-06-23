@@ -24,8 +24,7 @@ export {
 
 export type { SidebarComponentBase } from './utils';
 
-// Re-export the original sidebar component for now
-// TODO: Split the main sidebar component into smaller modules
+// Re-export the original sidebar component
 export { 
   Sidebar,
   SidebarContent,

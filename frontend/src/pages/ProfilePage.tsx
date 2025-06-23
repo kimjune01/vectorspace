@@ -183,7 +183,7 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-2xl font-bold" data-testid="profile-display-name">{profile.display_name}</h2>
                   {isOwnProfile ? (
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => navigate('/profile-settings')}>
                       <Settings className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>

@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,7 @@ from app.schemas.auth import (
 from app.auth import create_access_token, get_current_user, blacklist_token, security
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/signup", response_model=Token)
@@ -131,7 +133,7 @@ async def request_password_reset(
     
     # TODO: Send email with reset link
     # For now, we'll just log the token (remove in production)
-    print(f"Password reset token for {user.email}: {reset_token.token}")
+    logger.info(f"Password reset token generated for user {user.id} (email: {user.email})")
     
     return MessageResponse(message="If the email exists, a reset link has been sent")
 

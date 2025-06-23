@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ChatPage from './pages/ChatPage'
 import ProfilePage from './pages/ProfilePage'
+import ProfileSettingsPage from './pages/ProfileSettingsPage'
 import SavedConversationsPage from './pages/SavedConversationsPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { DebugPanel } from './components/debug/DebugPanel'
@@ -34,6 +35,7 @@ function App() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/chat/:id" element={<ChatPage />} />
                 <Route path="/profile/:username" element={<ProfilePage />} />
+                <Route path="/profile-settings" element={<ProfileSettingsPage />} />
                 <Route path="/saved" element={<SavedConversationsPage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
               </Routes>

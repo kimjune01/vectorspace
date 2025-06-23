@@ -13,7 +13,10 @@ test.describe('User Profiles & Social Interactions', () => {
     const isLoggedIn = await page.locator('.notification-bell').isVisible().catch(() => false);
     
     if (!isLoggedIn) {
-      await page.getByRole('link', { name: 'Login' }).click();
+      // Click the Settings button to open dropdown
+      await page.getByRole('button', { name: 'Options' }).click();
+      // Click the Sign In link in the dropdown
+      await page.getByRole('menuitem', { name: 'Sign In' }).click();
       await page.getByLabel('Username').fill(TEST_USER.username);
       await page.getByLabel('Password').fill(TEST_USER.password);
       await page.getByRole('button', { name: 'Login' }).click();

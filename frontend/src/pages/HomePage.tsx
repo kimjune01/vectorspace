@@ -113,6 +113,12 @@ export default function HomePage() {
       } else if (message.type === 'presence_update' || message.type === 'scroll_update') {
         // Handle presence and scroll updates
         presenceUpdateHandlerRef.current?.(message);
+      } else if (message.type === 'title_updated') {
+        console.log('Title updated:', message.new_title);
+        // Update current conversation title
+        if (currentConversation && message.conversation_id === currentConversation.id.toString()) {
+          setCurrentConversation(prev => prev ? { ...prev, title: message.new_title } : null);
+        }
       } else if (message.type === 'connection_established') {
         console.log('WebSocket connection established:', message);
       }

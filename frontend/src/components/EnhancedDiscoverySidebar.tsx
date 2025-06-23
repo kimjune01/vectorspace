@@ -143,6 +143,7 @@ export default function EnhancedDiscoverySidebar({
       variant="secondary" 
       className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
       onClick={() => window.location.href = `/discover?q=${encodeURIComponent(topic)}`}
+      data-testid="trending-topic-badge"
     >
       <TrendingUp className="h-3 w-3 mr-1" />
       {topic}
@@ -150,7 +151,7 @@ export default function EnhancedDiscoverySidebar({
   );
 
   return (
-    <div className="w-80 border-l bg-background/50 flex flex-col h-full">
+    <div className="w-80 border-l bg-background/50 flex flex-col h-full" data-testid="discovery-sidebar">
       <div className="p-4 border-b">
         <h2 className="font-semibold text-lg flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-yellow-500" />
@@ -183,7 +184,7 @@ export default function EnhancedDiscoverySidebar({
 
           {/* HN Topics - only show when conversation is summarized */}
           {currentConversation?.summary_public && trendingTopics.length > 0 && (
-            <div>
+            <div data-testid="hn-topics-section">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-orange-500" />
                 <h3 className="font-medium text-sm">From Hacker News</h3>

@@ -40,6 +40,7 @@ class ScraperManager:
         self._posts_processed = 0
         self._errors = []
         self._metrics = {}
+        self._max_errors = 50  # Limit error history
         
         # Scheduler thread
         self._scheduler_thread: Optional[threading.Thread] = None
@@ -67,11 +68,16 @@ class ScraperManager:
             return
         
         # Run in a new thread to avoid blocking the scheduler
-        thread = threading.Thread(
-            target=lambda: asyncio.run(self.run_scraper("hackernews"))
-        )
-        thread.daemon = True
-        thread.start()
+        try:
+            thread = threading.Thread(
+                target=lambda: asyncio.run(self.run_scraper("hackernews"))
+            )
+            thread.daemon = True
+            thread.start()
+            # Don't keep reference to thread to allow garbage collection
+            thread = None
+        except Exception as e:
+            logger.error(f"Failed to start scraper thread: {e}")
     
     def start_scheduler(self):
         """Start the background scheduler thread."""
@@ -141,9 +147,9 @@ class ScraperManager:
                 "platform": platform
             })
             
-            # Keep only last 50 errors
-            if len(self._errors) > 50:
-                self._errors = self._errors[-50:]
+            # Keep only last N errors to prevent memory growth
+            if len(self._errors) > self._max_errors:
+                self._errors = self._errors[-self._max_errors:]
             
             self._status = "error"
     

@@ -34,13 +34,22 @@ class HackerNewsScraper(BaseScraper):
     
     async def __aenter__(self):
         """Async context manager entry."""
-        self.session = httpx.AsyncClient(timeout=30.0)
+        # Configure client with connection pooling limits to prevent memory growth
+        self.session = httpx.AsyncClient(
+            timeout=30.0,
+            limits=httpx.Limits(
+                max_keepalive_connections=5,
+                max_connections=10,
+                keepalive_expiry=30.0
+            )
+        )
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         if self.session:
             await self.session.aclose()
+            self.session = None  # Clear reference to help GC
     
     async def _make_request(self, url: str) -> Optional[dict]:
         """Make rate-limited API request."""

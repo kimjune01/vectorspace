@@ -298,3 +298,73 @@ async def test_summarizer(
             "error": str(e),
             "status": "failed"
         }
+
+
+@router.get("/memory/usage")
+async def get_memory_usage(
+    vector_db: VectorDBService = Depends(get_vector_db),
+    scraper_manager: ScraperManager = Depends(get_scraper_manager)
+) -> Dict[str, Any]:
+    """Get current memory usage statistics."""
+    try:
+        import psutil
+        import gc
+        import sys
+        
+        # Get process memory info
+        process = psutil.Process()
+        memory_info = process.memory_info()
+        
+        # Garbage collection stats
+        gc_stats = gc.get_stats()
+        
+        # Get object counts by type
+        obj_counts = {}
+        for obj in gc.get_objects():
+            obj_type = type(obj).__name__
+            obj_counts[obj_type] = obj_counts.get(obj_type, 0) + 1
+        
+        # Sort by count and get top 20
+        top_objects = sorted(obj_counts.items(), key=lambda x: x[1], reverse=True)[:20]
+        
+        # Get cache sizes
+        vector_db_cache_size = len(vector_db._collections) if hasattr(vector_db, '_collections') else 0
+        
+        return {
+            "memory": {
+                "rss_mb": round(memory_info.rss / 1024 / 1024, 2),
+                "vms_mb": round(memory_info.vms / 1024 / 1024, 2),
+                "percent": round(process.memory_percent(), 2),
+                "available_mb": round(psutil.virtual_memory().available / 1024 / 1024, 2)
+            },
+            "garbage_collection": {
+                "stats": gc_stats,
+                "garbage_count": len(gc.garbage),
+                "collection_counts": gc.get_count()
+            },
+            "object_counts": {
+                "total_objects": len(gc.get_objects()),
+                "top_20_types": dict(top_objects)
+            },
+            "caches": {
+                "vector_db_collections": vector_db_cache_size,
+                "scraper_errors": len(scraper_manager._errors) if scraper_manager else 0,
+                "scraper_status": scraper_manager._status if scraper_manager else "N/A"
+            },
+            "system": {
+                "total_memory_mb": round(psutil.virtual_memory().total / 1024 / 1024, 2),
+                "cpu_percent": psutil.cpu_percent(interval=0.1)
+            }
+        }
+        
+    except ImportError:
+        return {
+            "error": "psutil not installed",
+            "message": "Install psutil to get memory usage statistics"
+        }
+    except Exception as e:
+        logger.error(f"Memory usage check failed: {e}")
+        return {
+            "error": str(e),
+            "message": "Failed to get memory usage statistics"
+        }

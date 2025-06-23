@@ -37,12 +37,18 @@ class VectorDBService:
         self.embedding_function = embedding_functions.DefaultEmbeddingFunction()
         logger.info("VectorDB initialized with ChromaDB default embeddings (all-MiniLM-L6-v2)")
         
-        # Cache for collections
+        # Cache for collections (limited to prevent memory growth)
         self._collections: Dict[str, Any] = {}
+        self._max_cached_collections = 10
     
     def _get_collection(self, collection_name: str):
         """Get or create a ChromaDB collection."""
         if collection_name not in self._collections:
+            # Clear cache if it's getting too large
+            if len(self._collections) >= self._max_cached_collections:
+                logger.info(f"Clearing collection cache (size: {len(self._collections)})")
+                self._collections.clear()
+            
             try:
                 collection = self.client.get_collection(
                     name=collection_name,

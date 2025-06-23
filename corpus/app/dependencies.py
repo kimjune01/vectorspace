@@ -40,7 +40,7 @@ def get_scraper_manager() -> Optional[ScraperManager]:
     return ScraperManager(
         vector_db=get_vector_db(),
         summarizer=summarizer,
-        scraper_interval_minutes=int(os.getenv("SCRAPER_INTERVAL_MINUTES", "60")),
+        scraper_interval_minutes=int(os.getenv("SCRAPER_INTERVAL_MINUTES", "15")),
         max_posts_per_scrape=int(os.getenv("MAX_POSTS_PER_SCRAPE", "100")),
         min_post_score=int(os.getenv("MIN_POST_SCORE", "10"))
     )

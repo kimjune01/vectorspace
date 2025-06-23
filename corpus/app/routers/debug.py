@@ -183,6 +183,87 @@ async def get_system_info() -> Dict[str, Any]:
         )
 
 
+@router.get("/persistence/check")
+async def check_data_persistence(
+    vector_db: VectorDBService = Depends(get_vector_db)
+) -> Dict[str, Any]:
+    """Check if data is persisting between deployments."""
+    try:
+        import os
+        import glob
+        from pathlib import Path
+        
+        # Get ChromaDB path
+        chromadb_path = os.getenv("CHROMADB_PATH", "./chroma_db")
+        path = Path(chromadb_path)
+        
+        # Check if persistence directory exists
+        path_exists = path.exists()
+        path_is_dir = path.is_dir() if path_exists else False
+        
+        # Get directory contents
+        files = []
+        total_size = 0
+        if path_exists and path_is_dir:
+            for file_path in path.glob("**/*"):
+                if file_path.is_file():
+                    file_size = file_path.stat().st_size
+                    files.append({
+                        "path": str(file_path.relative_to(path)),
+                        "size_bytes": file_size,
+                        "modified": datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+                    })
+                    total_size += file_size
+        
+        # Get collection info
+        collections = vector_db.list_collections()
+        collection_stats = {}
+        total_documents = 0
+        
+        for name in collections:
+            stats = await vector_db.get_collection_stats(name)
+            if stats:
+                collection_stats[name] = {
+                    "document_count": stats.document_count,
+                    "last_updated": stats.last_updated.isoformat() if stats.last_updated else None
+                }
+                total_documents += stats.document_count
+        
+        return {
+            "persistence_status": "enabled" if path_exists else "not_found",
+            "storage": {
+                "path": str(path.absolute()),
+                "exists": path_exists,
+                "is_directory": path_is_dir,
+                "total_size_bytes": total_size,
+                "total_size_mb": round(total_size / (1024 * 1024), 2),
+                "file_count": len(files),
+                "files": files[:10]  # Show first 10 files
+            },
+            "collections": {
+                "count": len(collections),
+                "names": collections,
+                "stats": collection_stats,
+                "total_documents": total_documents
+            },
+            "service_info": {
+                "uptime_seconds": int(time.time() - SERVICE_START_TIME),
+                "start_time": datetime.fromtimestamp(SERVICE_START_TIME).isoformat()
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Persistence check failed: {e}")
+        return {
+            "persistence_status": "error",
+            "error": str(e),
+            "service_info": {
+                "uptime_seconds": int(time.time() - SERVICE_START_TIME),
+                "start_time": datetime.fromtimestamp(SERVICE_START_TIME).isoformat()
+            }
+        }
+
+
 @router.post("/test/summarizer")
 async def test_summarizer(
     text: str = "This is a test post about artificial intelligence and machine learning.",

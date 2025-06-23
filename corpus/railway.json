@@ -1,11 +1,10 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile"
+    "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "./start.sh",
+    "startCommand": "uv run python main.py",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 300
   }

@@ -28,8 +28,7 @@ variables.VITE_API_URL = "https://vectorspace-production.up.railway.app"
 # Corpus Service (corpus-service)
 [environments.production.services.corpus]
 build.builder = "dockerfile"
-build.dockerfilePath = "corpus/Dockerfile"
-build.buildContext = "corpus"
+build.dockerfilePath = "Dockerfile"
 deploy.startCommand = "./start.sh"
 deploy.healthcheckPath = "/health"
 deploy.healthcheckTimeout = 300
@@ -37,6 +36,7 @@ deploy.restartPolicyType = "ON_FAILURE"
 deploy.restartPolicyMaxRetries = 3
 variables.LOG_LEVEL = "INFO"
 variables.CHROMADB_PATH = "/app/chroma_data"
+variables.RAILWAY_DOCKERFILE_PATH = "Dockerfile"
 
 # Postgres Database Service
 [environments.production.services.postgres]

@@ -230,7 +230,7 @@ test.describe('HN Recommendations - Corrected Integration Tests', () => {
 
     // Mock window.open to verify new tab behavior
     await page.evaluate(() => {
-      window.open = (url: string, target: string, features: string) => {
+      window.open = (url?: string | URL, target?: string, features?: string) => {
         (window as any).lastWindowOpen = { url, target, features };
         return null;
       };

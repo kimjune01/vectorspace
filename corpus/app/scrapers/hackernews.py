@@ -208,20 +208,27 @@ class HackerNewsScraper(BaseScraper):
         logger.info(f"Fetching top {limit} HN posts (min_score: {min_score})")
         
         # Get top story IDs
+        logger.info("Fetching top story IDs from HN API")
         story_ids = await self.fetch_top_stories()
         if not story_ids:
             logger.warning("No story IDs fetched from HN")
             return []
         
+        logger.info(f"Fetched {len(story_ids)} story IDs from HN")
+        
         # Limit to requested number
         story_ids = story_ids[:limit]
+        logger.info(f"Processing {len(story_ids)} stories (limited to {limit})")
         
         processed_posts = []
         
         # Process stories in batches to avoid overwhelming the API
         batch_size = 10
-        for i in range(0, len(story_ids), batch_size):
+        total_batches = (len(story_ids) + batch_size - 1) // batch_size
+        
+        for batch_num, i in enumerate(range(0, len(story_ids), batch_size), 1):
             batch_ids = story_ids[i:i + batch_size]
+            logger.info(f"Processing batch {batch_num}/{total_batches} with {len(batch_ids)} stories")
             
             # Fetch stories and comments for this batch
             batch_tasks = [
@@ -232,6 +239,7 @@ class HackerNewsScraper(BaseScraper):
             batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
             
             # Process each story in the batch
+            batch_processed = 0
             for story_id, result in zip(batch_ids, batch_results):
                 if isinstance(result, Exception):
                     logger.error(f"Failed to fetch story {story_id}: {result}")
@@ -239,19 +247,27 @@ class HackerNewsScraper(BaseScraper):
                 
                 story, comments = result
                 if not story:
+                    logger.warning(f"No story data for ID {story_id}")
                     continue
                 
                 # Apply minimum score filter
                 if min_score and (not story.score or story.score < min_score):
+                    logger.debug(f"Skipping story {story_id} - score {story.score} below threshold {min_score}")
                     continue
                 
                 # Process the story
+                logger.debug(f"Processing story {story_id}: '{story.title}' (score: {story.score})")
                 processed_post = await self.process_story(story, comments)
                 if processed_post:
                     processed_posts.append(processed_post)
-                    logger.debug(f"Processed story {story_id}: {story.title}")
+                    batch_processed += 1
+                    logger.debug(f"Successfully processed story {story_id}")
+                else:
+                    logger.warning(f"Failed to process story {story_id}")
+            
+            logger.info(f"Batch {batch_num} complete: {batch_processed}/{len(batch_ids)} stories processed")
         
-        logger.info(f"Successfully processed {len(processed_posts)} HN posts")
+        logger.info(f"HN scraping complete: {len(processed_posts)} posts processed from {len(story_ids)} stories")
         return processed_posts
     
     async def fetch_post_details(self, post_id: str) -> Optional[ProcessedPost]:

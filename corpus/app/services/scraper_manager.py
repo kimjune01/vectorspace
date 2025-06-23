@@ -115,7 +115,10 @@ class ScraperManager:
         start_time = datetime.utcnow()
         
         try:
-            logger.info(f"Starting {platform} scraper run")
+            logger.info(f"Starting {platform} scraper run - checking dependencies")
+            logger.info(f"Summarizer available: {self.summarizer is not None}")
+            logger.info(f"VectorDB available: {self.vector_db is not None}")
+            logger.info(f"Config - max_posts: {self.max_posts_per_scrape}, min_score: {self.min_post_score}")
             
             if platform == "hackernews":
                 await self._run_hackernews_scraper()
@@ -127,11 +130,11 @@ class ScraperManager:
             self._status = "idle"
             
             runtime_seconds = (datetime.utcnow() - start_time).total_seconds()
-            logger.info(f"Scraper run completed in {runtime_seconds:.1f} seconds")
+            logger.info(f"Scraper run completed successfully in {runtime_seconds:.1f} seconds")
             
         except Exception as e:
             error_msg = f"Scraper run failed: {str(e)}"
-            logger.error(error_msg)
+            logger.error(error_msg, exc_info=True)
             self._errors.append({
                 "timestamp": datetime.utcnow().isoformat(),
                 "error": error_msg,
@@ -146,27 +149,37 @@ class ScraperManager:
     
     async def _run_hackernews_scraper(self):
         """Run the Hacker News scraper."""
+        logger.info("Initializing HackerNews scraper with rate limiting")
+        
         async with HackerNewsScraper(
             rate_limit_per_second=1.0,
             summarizer=self.summarizer
         ) as scraper:
             
+            logger.info("Running HackerNews API health check")
             # Health check first
             if not await scraper.health_check():
                 raise Exception("Hacker News API is not accessible")
+            logger.info("HackerNews API health check passed")
             
+            logger.info(f"Fetching top posts (limit: {self.max_posts_per_scrape}, min_score: {self.min_post_score})")
             # Fetch and process posts
             posts = await scraper.fetch_top_posts(
                 limit=self.max_posts_per_scrape,
                 min_score=self.min_post_score
             )
             
+            logger.info(f"Fetched {len(posts) if posts else 0} posts from HackerNews")
+            
             if not posts:
-                logger.warning("No posts fetched from Hacker News")
+                logger.warning("No posts fetched from Hacker News - check min_score threshold")
                 return
             
+            logger.info(f"Adding {len(posts)} posts to vector database collection 'hackernews'")
             # Store in vector database
             added_count = await self.vector_db.add_posts(posts, "hackernews")
+            
+            logger.info(f"Successfully added {added_count} posts to vector database")
             
             self._posts_processed += added_count
             
@@ -180,7 +193,7 @@ class ScraperManager:
                 }
             })
             
-            logger.info(f"HN scraper processed {len(posts)} posts, stored {added_count}")
+            logger.info(f"HN scraper completed: {len(posts)} posts fetched, {added_count} stored, total processed: {self._posts_processed}")
     
     async def reindex_collection(self, collection_name: str):
         """

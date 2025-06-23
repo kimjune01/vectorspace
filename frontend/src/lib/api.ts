@@ -229,6 +229,12 @@ export class ApiClient {
     });
   }
 
+  async regenerateSummary(id: string): Promise<{success: boolean, summary: string, title: string, message: string}> {
+    return this.request<{success: boolean, summary: string, title: string, message: string}>(`/conversations/${id}/regenerate-summary-and-title`, {
+      method: 'POST',
+    });
+  }
+
   // Search endpoints
   async searchConversations(query: string, limit: number = 20): Promise<SearchResponse> {
     return this.request<SearchResponse>(`/search`, {

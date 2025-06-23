@@ -411,6 +411,37 @@ export default function HomePage() {
                 presenceUpdateHandlerRef.current = handler;
               }}
             />
+            
+            {/* Mock Summary Generation Button - for testing HN recommendations */}
+            {currentConversation && !currentConversation.summary_public && isAuthenticated && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    setIsLoading(true);
+                    const result = await apiClient.regenerateSummary(currentConversation.id.toString());
+                    if (result.success) {
+                      // Update current conversation with new summary and title
+                      setCurrentConversation(prev => prev ? {
+                        ...prev,
+                        summary_public: result.summary,
+                        title: result.title
+                      } : null);
+                    }
+                  } catch (error) {
+                    console.error('Failed to generate summary:', error);
+                    setError('Failed to generate summary');
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={isLoading}
+                className="text-xs"
+              >
+                📝 Generate Summary
+              </Button>
+            )}
           </div>
           <div className="flex items-center space-x-3">
             {isAuthenticated ? (

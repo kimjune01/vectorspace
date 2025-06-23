@@ -87,31 +87,78 @@ class SummaryService:
         return self._generate_extractive_summary(list(messages))
     
     def _generate_extractive_summary(self, messages: List[Message]) -> str:
-        """Generate a short, topical summary for sidebar display.
+        """Generate a comprehensive summary for HN recommendations and similarity matching.
         
-        This summary is intended for a UI sidebar and is generated from the
-        first user message in the conversation. It is truncated to 7 words.
+        This creates a more detailed summary that includes the main topics,
+        technical terms, and context from the conversation to enable better
+        semantic similarity matching with Hacker News articles.
         """
         if not messages:
             return ""
 
-        first_user_message_content = next(
-            (msg.content for msg in messages if msg.role == "user"), 
-            None
-        )
-
-        if not first_user_message_content:
-            first_message_content = next((msg.content for msg in messages), None)
-            if not first_message_content:
-                return "New Conversation"
-            words = first_message_content.split()
+        # Collect all message content to analyze themes and topics
+        user_messages = [msg.content for msg in messages if msg.role == "user"]
+        assistant_messages = [msg.content for msg in messages if msg.role == "assistant"]
+        
+        if not user_messages:
+            return "New Conversation"
+        
+        # Create a more comprehensive summary for better HN matching
+        summary_parts = []
+        
+        # Add primary topic from first user message
+        first_user_msg = user_messages[0]
+        if len(first_user_msg.split()) > 3:
+            summary_parts.append(f"Discussion about {' '.join(first_user_msg.split()[:10])}")
         else:
-            words = first_user_message_content.split()
+            summary_parts.append(first_user_msg)
         
-        if len(words) > 7:
-            return " ".join(words[:7]) + "..."
+        # Extract key technical terms and topics
+        all_content = " ".join(user_messages + assistant_messages)
+        tech_keywords = self._extract_key_terms(all_content)
         
-        return " ".join(words)
+        if tech_keywords:
+            summary_parts.append(f"Topics include: {', '.join(tech_keywords[:5])}")
+        
+        # Add conversation context if multiple exchanges
+        if len(messages) > 2:
+            summary_parts.append(f"Interactive conversation with {len(user_messages)} user messages covering technical implementation, best practices, and problem-solving approaches.")
+        
+        # Combine and limit length
+        full_summary = ". ".join(summary_parts)
+        
+        # Keep summary reasonable length for vector similarity
+        if len(full_summary) > 300:
+            full_summary = full_summary[:297] + "..."
+        
+        return full_summary
+    
+    def _extract_key_terms(self, text: str) -> List[str]:
+        """Extract key technical terms and topics from conversation text."""
+        import re
+        
+        # Common technical keywords to look for
+        tech_patterns = [
+            r'\b(?:API|REST|GraphQL|JSON|XML|HTTP|HTTPS|WebSocket|OAuth|JWT)\b',
+            r'\b(?:React|Vue|Angular|JavaScript|TypeScript|Node\.js|Python|Java|Go|Rust)\b',
+            r'\b(?:Docker|Kubernetes|AWS|Azure|GCP|CI\/CD|Git|GitHub)\b',
+            r'\b(?:database|SQL|NoSQL|MongoDB|PostgreSQL|MySQL|Redis)\b',
+            r'\b(?:machine learning|AI|neural network|deep learning|algorithm)\b',
+            r'\b(?:frontend|backend|fullstack|microservices|serverless)\b',
+            r'\b(?:performance|optimization|security|authentication|authorization)\b',
+            r'\b(?:testing|debugging|deployment|monitoring|logging)\b'
+        ]
+        
+        found_terms = []
+        text_lower = text.lower()
+        
+        for pattern in tech_patterns:
+            matches = re.findall(pattern, text_lower, re.IGNORECASE)
+            found_terms.extend(matches)
+        
+        # Remove duplicates and return most common terms
+        unique_terms = list(set(found_terms))
+        return unique_terms[:8]  # Return top 8 terms
     
     async def force_generate_summary(
         self, 

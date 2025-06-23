@@ -46,6 +46,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Backend
 cd backend && uv run python main.py          # Port 8000
 
+# Backend with mock HN recommendations (for testing)
+cd backend && MOCK_HN_RECOMMENDATIONS=true uv run python main.py
+
 # Frontend  
 cd frontend && pnpm install && pnpm run dev  # Port 5173
 
@@ -150,6 +153,11 @@ cd frontend && pnpm exec playwright test --headed       # Visual debugging
    - Backend: Ensure test database is properly seeded
    - Frontend: Check that both backend and frontend servers are running
    - E2E: Verify Playwright browsers are installed (`pnpm exec playwright install`)
+
+5. **HN Recommendations Issues**
+   - **Empty recommendations**: Set `MOCK_HN_RECOMMENDATIONS=true` to use mock data for testing
+   - **Corpus service down**: Mock flag provides fallback recommendations when corpus service is unavailable
+   - **Testing**: Mock recommendations are contextual and adapt to conversation summary content
 
 ### Performance Considerations
 - **Vector Search**: ChromaDB operations are async and may take time with large datasets

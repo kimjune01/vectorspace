@@ -1,14 +1,46 @@
-[build]
-builder = "dockerfile"
-dockerfilePath = "backend/Dockerfile"
-buildContext = "backend"
+# VectorSpace Railway Configuration
+# Multi-service configuration for backend, frontend, and corpus services
 
-[deploy]
-startCommand = "python migrate.py && python main.py"
-healthcheckPath = "/health"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3
+# Backend Service (vectorspace)
+[environments.production.services.vectorspace]
+build.builder = "dockerfile"
+build.dockerfilePath = "backend/Dockerfile"
+build.buildContext = "backend"
+deploy.startCommand = "python migrate.py && python main.py"
+deploy.healthcheckPath = "/health"
+deploy.restartPolicyType = "ON_FAILURE"
+deploy.restartPolicyMaxRetries = 3
+variables.ENVIRONMENT = "production"
+variables.LOG_LEVEL = "INFO"
 
-[environment]
-ENVIRONMENT = "production"
-LOG_LEVEL = "INFO"
+# Frontend Service (bountiful-wholeness)
+[environments.production.services.frontend]
+build.builder = "nixpacks"
+build.buildCommand = "pnpm install && pnpm run build"
+build.buildContext = "frontend"
+deploy.startCommand = "pnpm run preview --host 0.0.0.0 --port $PORT"
+deploy.healthcheckPath = "/"
+deploy.restartPolicyType = "ON_FAILURE"
+deploy.restartPolicyMaxRetries = 3
+variables.NODE_ENV = "production"
+variables.VITE_API_URL = "https://vectorspace-production.up.railway.app"
+
+# Corpus Service (corpus-service)
+[environments.production.services.corpus]
+build.builder = "dockerfile"
+build.dockerfilePath = "corpus/Dockerfile"
+build.buildContext = "corpus"
+deploy.startCommand = "./start.sh"
+deploy.healthcheckPath = "/health"
+deploy.healthcheckTimeout = 300
+deploy.restartPolicyType = "ON_FAILURE"
+deploy.restartPolicyMaxRetries = 3
+variables.LOG_LEVEL = "INFO"
+variables.CHROMADB_PATH = "/app/chroma_data"
+
+# Postgres Database Service
+[environments.production.services.postgres]
+image = "postgres:13"
+variables.POSTGRES_DB = "railway"
+variables.POSTGRES_PASSWORD = "railway"
+variables.POSTGRES_USER = "postgres"

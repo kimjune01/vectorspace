@@ -11,6 +11,49 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor libraries
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-router': ['react-router-dom'],
+          'vendor-ui': [
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-hover-card',
+            '@radix-ui/react-label',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-select',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-toggle',
+            '@radix-ui/react-tooltip'
+          ],
+          'vendor-icons': ['lucide-react'],
+          'vendor-state': ['zustand', '@tanstack/react-query'],
+          'vendor-animation': ['framer-motion'],
+          'vendor-utils': ['clsx', 'tailwind-merge', 'class-variance-authority'],
+          'vendor-markdown': ['react-markdown', 'remark-gfm', 'rehype-highlight'],
+          'vendor-charts': ['recharts']
+        }
+      }
+    },
+    // Increase chunk size warning limit to 600KB
+    chunkSizeWarningLimit: 600,
+    // Enable source maps for production debugging
+    sourcemap: false,
+    // Minification
+    minify: 'esbuild',
+    // Target modern browsers
+    target: 'es2020'
+  },
   server: {
     proxy: {
       '/api': {

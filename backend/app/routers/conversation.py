@@ -13,7 +13,6 @@ from app.schemas.conversation import (
 from app.services.vector_service import vector_service
 from app.services.summary_service import SummaryService
 from app.services.corpus_service import corpus_service
-from app.models.corpus import HNRecommendation
 from app.auth import get_current_user
 
 router = APIRouter()

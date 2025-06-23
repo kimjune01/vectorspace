@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch, AsyncMock
 from httpx import HTTPError, TimeoutException
 import json
 
-from app.services.corpus_service import CorpusService, HNRecommendation
+from app.services.corpus_service import CorpusService
 
 
 class TestCorpusService:
@@ -54,10 +54,10 @@ class TestCorpusService:
             )
             
             assert len(result) == 3
-            assert all(isinstance(rec, HNRecommendation) for rec in result)
-            assert result[0].title == "Machine Learning in Production"
-            assert result[0].score == 0.85
-            assert "ycombinator.com" in result[0].url
+            assert all(isinstance(rec, dict) for rec in result)
+            assert result[0]["title"] == "Machine Learning in Production"
+            assert result[0]["score"] == 0.85
+            assert "ycombinator.com" in result[0]["url"]
             
             # Verify API call was made correctly
             mock_post.assert_called_once()
@@ -158,15 +158,15 @@ class TestCorpusService:
             
             result = await corpus_service.get_hn_recommendations("test topic")
             
-            # Verify sorting - should be ordered by relevance × recency
+            # Verify sorting - should be ordered by relevance × recency (done by corpus service)
             assert len(result) == 3
-            titles = [rec.title for rec in result]
-            # The exact order depends on the scoring algorithm implementation
-            assert isinstance(result[0], HNRecommendation)
+            titles = [rec["title"] for rec in result]
+            # The exact order depends on the corpus service's scoring algorithm
+            assert isinstance(result[0], dict)
 
     @pytest.mark.asyncio 
-    async def test_get_hn_recommendations_limits_to_5_results(self, corpus_service):
-        """Test that only maximum 5 recommendations are returned."""
+    async def test_get_hn_recommendations_returns_corpus_results(self, corpus_service):
+        """Test that recommendations are returned from corpus service."""
         mock_response_data = {
             "recommendations": [
                 {
@@ -187,38 +187,6 @@ class TestCorpusService:
             
             result = await corpus_service.get_hn_recommendations("popular topic")
             
-            assert len(result) <= 5
-
-
-class TestHNRecommendation:
-    """Test HNRecommendation model."""
-    
-    def test_hn_recommendation_creation(self):
-        """Test HNRecommendation model creation."""
-        rec = HNRecommendation(
-            title="Test Article",
-            url="https://news.ycombinator.com/item?id=123",
-            score=0.85,
-            timestamp="2024-01-15T10:30:00Z"
-        )
-        
-        assert rec.title == "Test Article"
-        assert rec.url == "https://news.ycombinator.com/item?id=123"
-        assert rec.score == 0.85
-        assert rec.timestamp == "2024-01-15T10:30:00Z"
-    
-    def test_hn_recommendation_dict_conversion(self):
-        """Test HNRecommendation to dict conversion."""
-        rec = HNRecommendation(
-            title="Test Article",
-            url="https://news.ycombinator.com/item?id=123", 
-            score=0.85,
-            timestamp="2024-01-15T10:30:00Z"
-        )
-        
-        rec_dict = rec.dict()
-        
-        assert rec_dict["title"] == "Test Article"
-        assert rec_dict["url"] == "https://news.ycombinator.com/item?id=123"
-        assert rec_dict["score"] == 0.85
-        assert rec_dict["timestamp"] == "2024-01-15T10:30:00Z"
+            # Should return all recommendations from corpus service
+            assert len(result) == 10
+            assert all(isinstance(rec, dict) for rec in result)

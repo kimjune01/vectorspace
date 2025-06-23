@@ -20,7 +20,7 @@ VectorSpace transforms AI conversations into a social discovery experience:
 - **Vector Search** powered by ChromaDB with semantic embeddings
 - **External Content Discovery** via corpus microservice (Hacker News integration)
 - **Auto-Processing** including summarization, archiving, and PII filtering
-- **Comprehensive Testing** with 229+ tests running in ~2 seconds
+- **Comprehensive Testing** with 240+ tests running in ~2 seconds
 
 ### Frontend (React + TypeScript) ✅ Complete
 - **Modern Stack** using Vite + React + TypeScript with shadcn/ui components
@@ -41,7 +41,7 @@ VectorSpace transforms AI conversations into a social discovery experience:
 ### Backend Setup
 ```bash
 # Install dependencies and start backend
-cd backend/backend
+cd backend
 uv sync
 uv run python main.py
 
@@ -51,6 +51,9 @@ uv run python main.py
 # Optional: Seed database with test user for development
 uv run python seed_database.py
 # Creates test user: testuser/testpass (Red Panda)
+
+# Enable mock HN recommendations for testing (optional)
+MOCK_HN_RECOMMENDATIONS=true uv run python main.py
 ```
 
 ### Frontend Setup  
@@ -80,8 +83,8 @@ uv run python main.py
 
 ### Testing
 ```bash
-# Run backend tests (229+ tests in ~2 seconds!)
-cd backend/backend
+# Run backend tests (240+ tests in ~2 seconds!)
+cd backend
 uv run python -m pytest
 
 # Run with coverage
@@ -144,7 +147,7 @@ DATABASE_URL=sqlite+aiosqlite:///./conversations.db
 - **ChromaDB** - Vector database for semantic search  
 - **WebSockets** - Real-time bidirectional communication
 - **OpenAI API** - AI chat integration (configurable)
-- **pytest** - Comprehensive testing framework (187+ tests)
+- **pytest** - Comprehensive testing framework (240+ tests)
 
 ### Frontend (React + TypeScript)
 - **Vite + React** - Fast development and optimized builds
@@ -165,13 +168,14 @@ DATABASE_URL=sqlite+aiosqlite:///./conversations.db
 **VectorSpace is now feature-complete** with both backend and frontend fully implemented!
 
 ### ✅ Backend Features
-- Complete conversation discovery API with 229+ tests
+- Complete conversation discovery API with 240+ tests
 - JWT authentication with secure logout
 - Real-time WebSocket chat with AI streaming
 - Semantic search powered by ChromaDB
 - External content discovery via corpus microservice
 - User profiles with image upload support
 - Automated summarization and archiving
+- Mock HN recommendations for testing and development
 
 ### ✅ Frontend Features  
 - Modern React + TypeScript application

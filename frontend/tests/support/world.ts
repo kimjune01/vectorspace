@@ -1,5 +1,5 @@
 import { BeforeAll, AfterAll, Before, After, setWorldConstructor } from '@cucumber/cucumber';
-import { Browser, BrowserContext, Page, chromium } from 'playwright';
+import { Browser, BrowserContext, Page, chromium, Route } from '@playwright/test';
 
 class CustomWorld {
   public browser!: Browser;
@@ -36,7 +36,7 @@ class CustomWorld {
 
   private async setupCommonMocks() {
     // Mock authentication endpoints
-    await this.page.route('**/api/auth/**', route => {
+    await this.page.route('**/api/auth/**', (route: Route) => {
       const url = route.request().url();
       
       if (url.includes('/me')) {
@@ -56,7 +56,7 @@ class CustomWorld {
     });
 
     // Mock HN topics endpoint with dynamic responses
-    await this.page.route('**/api/corpus/hn-topics**', route => {
+    await this.page.route('**/api/corpus/hn-topics**', (route: Route) => {
       const url = new URL(route.request().url());
       const summary = url.searchParams.get('current_conversation_summary');
       
@@ -98,7 +98,7 @@ class CustomWorld {
     });
 
     // Mock conversation endpoints
-    await this.page.route('**/api/conversations/**', route => {
+    await this.page.route('**/api/conversations/**', (route: Route) => {
       const method = route.request().method();
       
       if (method === 'GET') {
@@ -118,7 +118,7 @@ class CustomWorld {
     });
 
     // Mock discover/search endpoints
-    await this.page.route('**/api/discover**', route => {
+    await this.page.route('**/api/discover**', (route: Route) => {
       route.fulfill({
         status: 200,
         contentType: 'application/json',

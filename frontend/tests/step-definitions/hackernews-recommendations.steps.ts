@@ -1,6 +1,6 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
-import { Page, BrowserContext } from 'playwright';
+import { Page, BrowserContext, Route } from '@playwright/test';
 
 // This file contains step definitions for the Hacker News recommendations feature
 // These steps can be used with Cucumber to run BDD tests
@@ -19,7 +19,7 @@ Given('I am logged in as a user', async function () {
   };
   
   // Mock authentication
-  await page.evaluate((user) => {
+  await page.evaluate((user: any) => {
     localStorage.setItem('token', 'mock-jwt-token');
     localStorage.setItem('user', JSON.stringify(user));
   }, currentUser);
@@ -58,7 +58,7 @@ When('the AI responds with detailed information', async function () {
 
 When('the conversation gets automatically summarized', async function () {
   // Mock the summarization process
-  await page.evaluate((topic) => {
+  await page.evaluate((topic: string) => {
     const mockSummary = `Discussion about ${topic}, covering key concepts, applications, and current trends in the field.`;
     
     // Simulate conversation update with summary
@@ -91,7 +91,7 @@ Then('the HN topics should be semantically related to machine learning', async f
   const topicTexts = await topicBadges.allTextContents();
   const mlRelatedTerms = ['AI', 'Machine Learning', 'Neural', 'Deep Learning', 'Algorithm'];
   
-  const hasMLTopic = topicTexts.some(text => 
+  const hasMLTopic = topicTexts.some((text: string) => 
     mlRelatedTerms.some(term => text.toLowerCase().includes(term.toLowerCase()))
   );
   
@@ -104,7 +104,7 @@ Then('the topics should include terms like {string}, {string}, or {string}',
     const topicTexts = await topicBadges.allTextContents();
     
     const searchTerms = [term1, term2, term3];
-    const hasExpectedTerm = topicTexts.some(text =>
+    const hasExpectedTerm = topicTexts.some((text: string) =>
       searchTerms.some(term => text.toLowerCase().includes(term.toLowerCase()))
     );
     
@@ -144,14 +144,14 @@ Given('I have two conversations:', async function (dataTable) {
   }
   
   // Mock the conversations in the page context
-  await page.evaluate((convs) => {
-    window.mockConversations = convs;
+  await page.evaluate((convs: any) => {
+    (window as any).mockConversations = convs;
   }, Object.fromEntries(conversations));
 });
 
 When('I view {string} about artificial intelligence', async function (chatName: string) {
   const conversation = conversations.get(chatName);
-  await page.evaluate((conv) => {
+  await page.evaluate((conv: any) => {
     window.dispatchEvent(new CustomEvent('conversation-selected', {
       detail: conv
     }));
@@ -162,7 +162,7 @@ When('I view {string} about artificial intelligence', async function (chatName: 
 
 When('I switch to {string} about web development', async function (chatName: string) {
   const conversation = conversations.get(chatName);
-  await page.evaluate((conv) => {
+  await page.evaluate((conv: any) => {
     window.dispatchEvent(new CustomEvent('conversation-selected', {
       detail: conv
     }));
@@ -176,7 +176,7 @@ Then('the {string} section should show AI-related topics', async function (secti
   const topicTexts = await topicBadges.allTextContents();
   
   const aiTerms = ['AI', 'Artificial Intelligence', 'Machine Learning', 'Neural'];
-  const hasAITopic = topicTexts.some(text =>
+  const hasAITopic = topicTexts.some((text: string) =>
     aiTerms.some(term => text.toLowerCase().includes(term.toLowerCase()))
   );
   
@@ -188,7 +188,7 @@ Then('the {string} section should update to show web development topics', async 
   const topicTexts = await topicBadges.allTextContents();
   
   const webTerms = ['Web', 'JavaScript', 'React', 'Frontend', 'Backend'];
-  const hasWebTopic = topicTexts.some(text =>
+  const hasWebTopic = topicTexts.some((text: string) =>
     webTerms.some(term => text.toLowerCase().includes(term.toLowerCase()))
   );
   
@@ -214,7 +214,7 @@ When('clicking on a topic should search for that term in the discover page', asy
 
 Given('the corpus service is unavailable', async function () {
   // Mock API to return service unavailable
-  await page.route('**/api/corpus/hn-topics**', route => {
+  await page.route('**/api/corpus/hn-topics**', (route: Route) => {
     route.fulfill({
       status: 503,
       contentType: 'application/json',
@@ -281,7 +281,7 @@ Then('each topic should be clickable', async function () {
 
 When('the HN semantic search returns no relevant results', async function () {
   // Mock empty results from API
-  await page.route('**/api/corpus/hn-topics**', route => {
+  await page.route('**/api/corpus/hn-topics**', (route: Route) => {
     route.fulfill({
       status: 200,
       contentType: 'application/json',
